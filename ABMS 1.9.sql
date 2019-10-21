@@ -78,14 +78,14 @@ DROP PROCEDURE IF EXISTS altaPedido;
 DELIMITER //
 CREATE PROCEDURE altaPedido(Concesionaria_cuit VARCHAR(45), OUT idP INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE key_id INT(11);
+    DECLARE key_id_C INT(11);
     DECLARE ultimo_pedido INT(11) DEFAULT NULL;
-    SELECT idConcesionaria INTO key_id
+    SELECT idConcesionaria INTO key_id_C
     FROM Concesionaria 
     WHERE Concesionaria.cuit = Concesionaria_cuit;
 
-    IF (key_id IS NOT NULL) THEN
-        INSERT INTO Pedido (idConcesionaria, fecha) VALUES (key_id, now());
+    IF (key_id_C IS NOT NULL) THEN
+        INSERT INTO Pedido (idConcesionaria, fecha) VALUES (key_id_C, now());
         SET ultimo_pedido = LAST_INSERT_ID();
     ELSE
         SET res = -1;
@@ -103,14 +103,19 @@ DROP PROCEDURE IF EXISTS modificacionPedido;
 DELIMITER //
 CREATE PROCEDURE modificacionPedido(idPedido INT, Concesionaria_cuit VARCHAR(45), fecha_nueva DATE, OUT res INT, OUT msg VARCHAR(45))
 BEGIN 
-    DECLARE key_id INT(11);
+    DECLARE key_id_C INT(11);
+    DECLARE key_id_P INT(11);
     -- Para verificar que existe la concesionaria que queremos cambiar
-    SELECT idConcesionaria INTO key_id
+    SELECT idConcesionaria INTO key_id_C
     FROM Concesionaria AS C
     WHERE C.cuit = Concesionaria_cuit;
+    -- Para verificar que existe el pedido
+    SELECT P.idPedido INTO key_id_P
+    FROM Pedido AS P
+    WHERE P.idPedido = idPedido;
     
-    IF (key_id IS NOT NULL) THEN
-        UPDATE Pedido AS P SET idConcesionaria=key_id, fecha=fecha_nueva WHERE P.idPedido = idPedido;
+    IF (key_id_P IS NOT NULL AND key_id_C IS NOT NULL) THEN
+        UPDATE Pedido AS P SET idConcesionaria=key_id_C, fecha=fecha_nueva WHERE P.idPedido = idPedido;
     ELSE
         SET res = -1;
         SET msg = 'No existe Concesionaria';
@@ -145,16 +150,16 @@ DROP PROCEDURE IF EXISTS altaDetallePedido;
 DELIMITER //
 CREATE PROCEDURE altaDetallePedido(modelo VARCHAR(45), cantidad INT(11), INOUT id INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE idModeloTemp INT(11);
+    DECLARE key_id_M INT(11);
     DECLARE ultimo_detalle INT(11);
-    SELECT idModelo INTO idModeloTemp
-    FROM Modelo
-    WHERE Modelo.descripcion = modelo;
+    SELECT idModelo INTO key_id_M
+    FROM Modelo AS M
+    WHERE M.descripcion = modelo;
 
-    IF (idModeloTemp IS NOT NULL) THEN
-        INSERT INTO DetallePedido(Pedido_idPedido, Modelo_idModelo, cantidad) VALUES (id, idModeloTemp, cantidad);
+    IF (key_id_M IS NOT NULL) THEN
+        INSERT INTO DetallePedido(Pedido_idPedido, Modelo_idModelo, cantidad) VALUES (id, key_id_M, cantidad);
         SET ultimo_detalle = LAST_INSERT_ID();
-        CALL altaVehiculo(idModeloTemp, cantidad, ultimo_detalle, id);
+        CALL altaVehiculo(key_id_M, cantidad, ultimo_detalle, id);
         SET res = 0;
         SET msg = '';
     ELSE
@@ -168,20 +173,24 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS modificacionDetallePedido;
 DELIMITER //
-CREATE PROCEDURE modificacionDetallePedido(idDetallePedido INT(11), modeloP VARCHAR(45), cantidadP INT(11), OUT res INT, OUT msg VARCHAR(45))
+CREATE PROCEDURE modificacionDetallePedido(idDetallePedido INT(11), modelo VARCHAR(45), cantidad INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE idModeloTemp INT(11);
-    SELECT idModelo INTO idModeloTemp
-    FROM Modelo
-    WHERE Modelo.descripcion = modeloP;
-    
-    IF (idModeloTemp IS NOT NULL) THEN
-        UPDATE DetallePedido SET Modelo_idModelo=idModeloTemp, cantidad=cantidadP WHERE DetallePedido.idDetallePedido=idDetallePedido;
+    DECLARE key_id_M INT(11);
+    DECLARE key_id_DP INT(11);
+    SELECT idModelo INTO key_id_M
+    FROM Modelo AS M
+    WHERE M.descripcion = modelo;
+    SELECT DP.idDetallePedido INTO key_id_DP
+    FROM DetallePedido AS DP 
+    WHERE DP.idDetallePedido = idDetallePedido;
+
+    IF (key_id_DP IS NOT NULL AND key_id_M IS NOT NULL) THEN
+        UPDATE DetallePedido DP SET DP.Modelo_idModelo=key_id_M, DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
         SET res = 0;
         SET msg = '';
     ELSE
         SET res = -1;
-        SET msg = 'No existe modelo';
+        SET msg = 'No existe Modelo o Detalle del Pedido';
         SELECT res, msg;
     END IF;
 END
@@ -192,18 +201,18 @@ DROP PROCEDURE IF EXISTS bajaDetallePedido;
 DELIMITER //
 CREATE PROCEDURE bajaDetallePedido(idDetallePedido INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE idDetalleTemp INT(11);
-    SELECT idDetallePedido INTO idDetalleTemp
-    FROM DetallePedido
-    WHERE DetallePedido.idDetallePedido = idDetallePedido;
+    DECLARE key_id_DP INT(11);
+    SELECT DP.idDetallePedido INTO key_id_DP
+    FROM DetallePedido AS DP
+    WHERE DP.idDetallePedido = idDetallePedido;
     
     IF (idDetalleTemp IS NOT NULL) THEN
-        UPDATE DetallePedido SET eliminado=1, fechaEliminado=now() WHERE DetallePedido.idDetallePedido=idDetallePedido;
+        UPDATE DetallePedido AS DP SET eliminado=1, fechaEliminado=now() WHERE DP.idDetallePedido = idDetallePedido;
         SET res = 0;
         SET msg = '';
     ELSE
         SET res = -1;
-        SET msg = 'No existe Detalle Pedido';
+        SET msg = 'No existe Detalle del Pedido';
         SELECT res, msg;
     END IF;
 END

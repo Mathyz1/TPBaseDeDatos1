@@ -15,10 +15,14 @@ CALL bajaConcesionaria('1234567890', @res, @msg);
 CALL altaPedido('1234567890', @idP, @res, @msg);
 CALL modificacionPedido(2, '1234567891', "2020-01-01", @res, @msg);
 CALL bajaPedido(5, @res, @msg);
-SET @id := @idP;
+SET @id := @idP; -- Para obtener el último pedido agregado
 CALL altaDetallePedido('Ranger', 15, @id, @res, @msg);
 CALL altaDetallePedido('KA', 10, @id, @res, @msg);
 CALL altaDetallePedido('Focus', 35, @id, @res, @msg);
+-- Modificación de los detalles de los pedidos
+CALL modificacionDetallePedido(1, 'Focus', 10, @res, @msg);
+CALL modificacionDetallePedido(2, 'Ranger', 40, @res, @msg);
+
 
 SELECT @id;
 
@@ -28,3 +32,4 @@ SELECT * FROM Pedido;
 SELECT * FROM DetallePedido;
 SELECT * FROM Modelo;
 SELECT * FROM Vehiculo;
+
