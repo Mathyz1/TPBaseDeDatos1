@@ -103,7 +103,6 @@ DROP PROCEDURE IF EXISTS modificacionPedido;
 DELIMITER //
 CREATE PROCEDURE modificacionPedido(idPedido INT, Concesionaria_cuit VARCHAR(45), fecha_nueva DATE, OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    SET FOREIGN_KEY_CHECKS=0; -- Esto es para evitar problemas con las claves foráneas
     DECLARE key_id_C INT(11);
     DECLARE key_id_P INT(11);
     -- Para verificar que existe la concesionaria que queremos cambiar
