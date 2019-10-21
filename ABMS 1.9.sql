@@ -29,13 +29,12 @@ DROP PROCEDURE IF EXISTS modificacionConcesionaria;
 DELIMITER //
 CREATE PROCEDURE modificacionConcesionaria(cuitP VARCHAR(45), razonSocialP VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE recv VARCHAR(45);
     DECLARE key_id INT;
-    SELECT idConcesionaria, cuit INTO key_id, recv
+    SELECT idConcesionaria INTO key_id
     FROM Concesionaria 
     WHERE Concesionaria.cuit = cuitP;
     
-    IF (recv IS NOT NULL) THEN
+    IF (key_id IS NOT NULL) THEN
         UPDATE Concesionaria SET razonSocial=razonSocialP WHERE idConcesionaria=key_id;
         SET res = 0;
         SET msg = '';
