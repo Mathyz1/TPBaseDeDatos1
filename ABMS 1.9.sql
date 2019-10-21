@@ -145,7 +145,7 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS altaDetallePedido;
 DELIMITER //
-CREATE PROCEDURE altaDetallePedido(modelo VARCHAR(45), cantidad INT(11), INOUT id INT(11))
+CREATE PROCEDURE altaDetallePedido(modelo VARCHAR(45), cantidad INT(11), INOUT id INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE idModeloTemp INT(11);
     DECLARE ultimo_detalle INT(11);
