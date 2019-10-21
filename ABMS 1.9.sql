@@ -112,35 +112,22 @@ END
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS altaProvedor;
+DROP PROCEDURE IF EXISTS altaDetallePedido;
 DELIMITER //
-CREATE PROCEDURE altaProvedor(cuit INT, razonSocial VARCHAR(45), precio INT )
-BEGIN 
-    insert into provedor values(cuit, razonSocial ,precio);
+CREATE PROCEDURE altaDetallePedido(modelo VARCHAR(45), cantidad INT(11), INOUT id INT(11))
+BEGIN
+    DECLARE idModeloTemp INT(11);
+    DECLARE ultimo_detalle INT(11);
+    SELECT idModelo INTO idModeloTemp
+    FROM Modelo
+    WHERE Modelo.descripcion = modelo;
+    
+    INSERT INTO DetallePedido(Pedido_idPedido, Modelo_idModelo, cantidad) VALUES (id, idModeloTemp, cantidad);
+    SET ultimo_detalle = LAST_INSERT_ID();
+    CALL altaVehiculo(idModeloTemp, cantidad, ultimo_detalle, id);
 END
 //
 DELIMITER ;
-
-
-DROP PROCEDURE IF EXISTS modificacionProveedor;
-DELIMITER //
-CREATE PROCEDURE modificacionProveedor(cuit INT, razonSocial VARCHAR(45), precio INT )
-BEGIN 
-    update proveedor set cuit=cuitP, razonSocial=razonSocialP, razonSocial=Concesionaria_cuitP where cuit=cuitP;
-END
-//
-DELIMITER ;
-
-
-DROP PROCEDURE IF EXISTS bajaProveedor;
-DELIMITER //
-CREATE PROCEDURE bajaProveedor(cuit INT)
-BEGIN 
-    update Proveedor set eliminado=1,fechaEliminado=now() where cuit=cuitP;
-END
-//
-DELIMITER ;
-
 
 DROP PROCEDURE IF EXISTS altaVehiculo;
 DELIMITER //
@@ -202,6 +189,34 @@ END
 //
 DELIMITER ;
 
+DROP PROCEDURE IF EXISTS altaProvedor;
+DELIMITER //
+CREATE PROCEDURE altaProvedor(cuit INT, razonSocial VARCHAR(45), precio INT )
+BEGIN 
+    insert into provedor values(cuit, razonSocial ,precio);
+END
+//
+DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS modificacionProveedor;
+DELIMITER //
+CREATE PROCEDURE modificacionProveedor(cuit INT, razonSocial VARCHAR(45), precio INT )
+BEGIN 
+    update proveedor set cuit=cuitP, razonSocial=razonSocialP, razonSocial=Concesionaria_cuitP where cuit=cuitP;
+END
+//
+DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS bajaProveedor;
+DELIMITER //
+CREATE PROCEDURE bajaProveedor(cuit INT)
+BEGIN 
+    update Proveedor set eliminado=1,fechaEliminado=now() where cuit=cuitP;
+END
+//
+DELIMITER ;
 
 DROP PROCEDURE IF EXISTS altaPartes;
 DELIMITER //
@@ -232,21 +247,4 @@ END
 //
 DELIMITER ;
 
-
-DROP PROCEDURE IF EXISTS altaDetallePedido;
-DELIMITER //
-CREATE PROCEDURE altaDetallePedido(modelo VARCHAR(45), cantidad INT(11), INOUT id INT(11))
-BEGIN
-    DECLARE idModeloTemp INT(11);
-    DECLARE ultimo_detalle INT(11);
-    SELECT idModelo INTO idModeloTemp
-    FROM Modelo
-    WHERE Modelo.descripcion = modelo;
-    
-    INSERT INTO DetallePedido(Pedido_idPedido, Modelo_idModelo, cantidad) VALUES (id, idModeloTemp, cantidad);
-    SET ultimo_detalle = LAST_INSERT_ID();
-    CALL altaVehiculo(idModeloTemp, cantidad, ultimo_detalle, id);
-END
-//
-DELIMITER ;
 
