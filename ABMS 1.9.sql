@@ -88,7 +88,6 @@ BEGIN
     IF (key_id IS NOT NULL) THEN
         INSERT INTO Pedido (idConsecionaria, fecha) VALUES (key_id, now());
         SET ultimo_pedido = LAST_INSERT_ID();
-        CALL altaVehiculo(idModeloTemp, cantidad, ultimo_detalle, id);
     ELSE
         SET res = -1;
         SET msg = 'No existe Concesionaria';
@@ -103,9 +102,22 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS modificacionPedido;
 DELIMITER //
-CREATE PROCEDURE modificacionPedido(idPedido INT, modelo VARCHAR(45), cantidad INT, Concesionaria_cuit VARCHAR(45))
+CREATE PROCEDURE modificacionPedido(idPedido INT, fecha_nueva DATE, Concesionaria_cuit VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN 
-    UPDATE pedido SET modelo=modeloP, cantidad=cantidadP, Concesionaria_cuit=Concesionaria_cuitP WHERE idPedido=idPedidoP;
+    DECLARE recv VARCHAR(45);
+    DECLARE key_id INT(11);
+    DECLARE ultimo_pedido INT(11) DEFAULT NULL;
+    SELECT idConcesionaria INTO key_id
+    FROM Concesionaria 
+    WHERE Concesionaria.cuit = Concesionaria_cuit;
+    
+    IF (key_id IS NOT NULL) THEN
+        UPDATE Pedido SET idConsecionaria=key_id, fecha=fecha_nueva WHERE idConcesionaria = key_id;
+    ELSE
+        SET res = -1;
+        SET msg = 'No existe Concesionaria';
+        SELECT res, msg;
+    END IF;
 END
 //
 DELIMITER ;
