@@ -128,18 +128,14 @@ DELIMITER //
 CREATE PROCEDURE bajaPedido(idPedido INT)
 BEGIN
     DECLARE key_id INT(11);
-    DECLARE key_id_concesionaria INT(11);
-    SELECT idConcesionaria INTO key_id
-    FROM Concesionaria 
-    WHERE Concesionaria.cuit = Concesionaria_cuit;
-    SELECT idConcesionaria INTO key_id_concesionaria
+    SELECT idPedido INTO key_id
     FROM Pedido
-    WHERE Pedido.idPedido = idPedido AND Pedido.idConcesionaria = key_id;
-    IF (key_id IS NOT NULL AND key_id_concesionaria IS NOT NULL) THEN
+    WHERE Pedido.idPedido = idPedido;
+    IF (key_id IS NOT NULL) THEN
         UPDATE Pedido SET eliminado=1, fechaEliminado=now() WHERE idPedido = idPedidoP;
     ELSE
         SET res = -1;
-        SET msg = 'No existe Concesionaria en la tabla Pedido';
+        SET msg = 'No existe Pedido';
         SELECT res, msg;
     END IF;
 END
