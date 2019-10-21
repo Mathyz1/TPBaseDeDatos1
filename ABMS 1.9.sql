@@ -78,7 +78,6 @@ DROP PROCEDURE IF EXISTS altaPedido;
 DELIMITER //
 CREATE PROCEDURE altaPedido(Concesionaria_cuit VARCHAR(45), OUT idP INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE recv VARCHAR(45);
     DECLARE key_id INT(11);
     DECLARE ultimo_pedido INT(11) DEFAULT NULL;
     SELECT idConcesionaria INTO key_id
@@ -102,20 +101,21 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS modificacionPedido;
 DELIMITER //
-CREATE PROCEDURE modificacionPedido(idPedido INT, fecha_nueva DATE, Concesionaria_cuit VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
+CREATE PROCEDURE modificacionPedido(idPedidoP INT, fecha_nueva DATE, Concesionaria_cuit VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN 
-    DECLARE recv VARCHAR(45);
     DECLARE key_id INT(11);
-    DECLARE ultimo_pedido INT(11) DEFAULT NULL;
+    DECLARE key_id_concesionaria INT(11);
     SELECT idConcesionaria INTO key_id
     FROM Concesionaria 
     WHERE Concesionaria.cuit = Concesionaria_cuit;
-    
-    IF (key_id IS NOT NULL) THEN
-        UPDATE Pedido SET idConsecionaria=key_id, fecha=fecha_nueva WHERE idConcesionaria = key_id;
+    SELECT idConcesionaria INTO key_id_concesionaria
+    FROM Pedido
+    WHERE idPedido = idPedidoP AND idConcesionaria = key_id;
+    IF (key_id IS NOT NULL AND key_id_concesionaria IS NOT NULL) THEN
+        UPDATE Pedido SET idConsecionaria=key_id, fecha=fecha_nueva WHERE idPedido = idPedidoP;
     ELSE
         SET res = -1;
-        SET msg = 'No existe Concesionaria';
+        SET msg = 'No existe Concesionaria en la tabla Pedido';
         SELECT res, msg;
     END IF;
 END
@@ -127,7 +127,21 @@ DROP PROCEDURE IF EXISTS bajaPedido;
 DELIMITER //
 CREATE PROCEDURE bajaPedido(idPedido INT)
 BEGIN
-    update Pedido set eliminado=1,fechaEliminado=now() where idPedido=idPedidoP;
+    DECLARE key_id INT(11);
+    DECLARE key_id_concesionaria INT(11);
+    SELECT idConcesionaria INTO key_id
+    FROM Concesionaria 
+    WHERE Concesionaria.cuit = Concesionaria_cuit;
+    SELECT idConcesionaria INTO key_id_concesionaria
+    FROM Pedido
+    WHERE Pedido.idPedido = idPedido AND Pedido.idConcesionaria = key_id;
+    IF (key_id IS NOT NULL AND key_id_concesionaria IS NOT NULL) THEN
+        UPDATE Pedido SET eliminado=1, fechaEliminado=now() WHERE idPedido = idPedidoP;
+    ELSE
+        SET res = -1;
+        SET msg = 'No existe Concesionaria en la tabla Pedido';
+        SELECT res, msg;
+    END IF;
 END
 //
 DELIMITER ;
