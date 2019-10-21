@@ -125,7 +125,7 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS bajaPedido;
 DELIMITER //
-CREATE PROCEDURE bajaPedido(idPedido INT)
+CREATE PROCEDURE bajaPedido(idPedido INT, OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE key_id INT(11);
     SELECT idPedido INTO key_id
