@@ -130,11 +130,11 @@ DROP PROCEDURE IF EXISTS bajaPedido;
 DELIMITER //
 CREATE PROCEDURE bajaPedido(idPedido INT, OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE key_id INT(11);
-    SELECT P.idPedido INTO key_id
+    DECLARE key_id_P INT(11);
+    SELECT P.idPedido INTO key_id_P
     FROM Pedido AS P
     WHERE P.idPedido = idPedido;
-    IF (key_id IS NOT NULL) THEN
+    IF (key_id_P IS NOT NULL) THEN
         UPDATE Pedido AS P SET eliminado=1, fechaEliminado=now() WHERE P.idPedido = idPedido;
     ELSE
         SET res = -1;
@@ -185,7 +185,7 @@ BEGIN
     WHERE DP.idDetallePedido = idDetallePedido;
 
     IF (key_id_DP IS NOT NULL AND key_id_M IS NOT NULL) THEN
-        UPDATE DetallePedido DP SET DP.Modelo_idModelo=key_id_M, DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
+        UPDATE DetallePedido AS DP SET DP.Modelo_idModelo=key_id_M, DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
         SET res = 0;
         SET msg = '';
     ELSE
@@ -206,7 +206,7 @@ BEGIN
     FROM DetallePedido AS DP
     WHERE DP.idDetallePedido = idDetallePedido;
     
-    IF (idDetalleTemp IS NOT NULL) THEN
+    IF (key_id_DP IS NOT NULL) THEN
         UPDATE DetallePedido AS DP SET eliminado=1, fechaEliminado=now() WHERE DP.idDetallePedido = idDetallePedido;
         SET res = 0;
         SET msg = '';

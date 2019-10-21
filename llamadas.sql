@@ -11,7 +11,7 @@ CALL bajaConcesionaria('1234567891', @res, @msg);
 CALL bajaConcesionaria('1234567890', @res, @msg);
 
 /* ABM PEDIDOS */
--- Damos de alta 3 pedidos para una conecionaria
+-- Damos de alta 3 pedidos para una concesionaria
 CALL altaPedido('1234567890', @idP, @res, @msg);
 CALL modificacionPedido(2, '1234567891', "2020-01-01", @res, @msg);
 CALL bajaPedido(5, @res, @msg);
@@ -22,6 +22,9 @@ CALL altaDetallePedido('Focus', 35, @id, @res, @msg);
 -- Modificación de los detalles de los pedidos
 CALL modificacionDetallePedido(1, 'Focus', 10, @res, @msg);
 CALL modificacionDetallePedido(2, 'Ranger', 40, @res, @msg);
+-- Damos de baja algunos pedidos
+CALL bajaDetallePedido(3, @res, @msg);
+CALL bajaDetallePedido(4, @res, @msg);
 
 
 SELECT @id;
