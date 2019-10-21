@@ -154,7 +154,7 @@ BEGIN
     DECLARE finished INT DEFAULT 0;
     DECLARE curDetallePedido
         CURSOR FOR
-            SELECT Modelo_idModelo, cantidad FROM DetallePedido WHERE Pedido_idPedido = id;
+            SELECT Modelo_idModelo, cantidad FROM DetallePedido WHERE idDetallePedido = ultimo_detalle;
     DECLARE CONTINUE HANDLER
         FOR NOT FOUND SET finished = 1;
     OPEN curDetallePedido;
