@@ -42,13 +42,13 @@ DEFAULT CHARACTER SET = utf8;
 CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Pedido` (
   `idPedido` INT(11) NOT NULL AUTO_INCREMENT,
   `fecha` DATE NOT NULL,
-  `idConsecionaria` INT(11) NOT NULL,
+  `idConcesionaria` INT(11) NOT NULL,
   `eliminado` TINYINT(1) NOT NULL DEFAULT 0,
   `fechaEliminado` DATETIME NULL DEFAULT NULL,
-  PRIMARY KEY (`idPedido`, `idConsecionaria`),
-  INDEX `fk_Pedido_Consecionaria1_idx` (`idConsecionaria` ASC),
-  CONSTRAINT `fk_Pedido_Consecionaria1`
-    FOREIGN KEY (`idConsecionaria`)
+  PRIMARY KEY (`idPedido`, `idConcesionaria`),
+  INDEX `fk_Pedido_Consecionaria1_idx` (`idConcesionaria` ASC),
+  CONSTRAINT `fk_Pedido_Concesionaria1`
+    FOREIGN KEY (`idConcesionaria`)
     REFERENCES `TerminalAutomotriz`.`Concesionaria` (`idConcesionaria`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
