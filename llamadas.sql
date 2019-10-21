@@ -8,6 +8,7 @@ CALL altaConcesionaria('1234567891', 'Ford2', @res, @msg);
 CALL modificacionConcesionaria('1234567890', "FordNuevo", @res, @msg);
 -- Baja lógica de una concesionaria
 CALL bajaConcesionaria('1234567891', @res, @msg);
+CALL bajaConcesionaria('1234567890', @res, @msg);
 
 /* ABM PEDIDOS */
 -- Damos de alta 3 pedidos para una conecionaria
