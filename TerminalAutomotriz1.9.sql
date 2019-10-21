@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Pedido` (
   `eliminado` TINYINT(1) NOT NULL DEFAULT 0,
   `fechaEliminado` DATETIME NULL DEFAULT NULL,
   PRIMARY KEY (`idPedido`, `idConcesionaria`),
-  INDEX `fk_Pedido_Consecionaria1_idx` (`idConcesionaria` ASC),
+  INDEX `fk_Pedido_Concesionaria1_idx` (`idConcesionaria` ASC),
   CONSTRAINT `fk_Pedido_Concesionaria1`
     FOREIGN KEY (`idConcesionaria`)
     REFERENCES `TerminalAutomotriz`.`Concesionaria` (`idConcesionaria`)
