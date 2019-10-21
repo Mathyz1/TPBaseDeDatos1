@@ -76,15 +76,26 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS altaPedido;
 DELIMITER //
-CREATE PROCEDURE altaPedido(Concesionaria_cuit VARCHAR(45), OUT idP INT(11))
+CREATE PROCEDURE altaPedido(Concesionaria_cuit VARCHAR(45), OUT idP INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE recv VARCHAR(45);
     DECLARE key_id INT(11);
+    DECLARE ultimo_pedido INT(11) DEFAULT NULL;
     SELECT idConcesionaria INTO key_id
     FROM Concesionaria 
     WHERE Concesionaria.cuit = Concesionaria_cuit;
-    INSERT INTO Pedido (idConsecionaria, fecha) VALUES (key_id, now());
-    SET idP= LAST_INSERT_ID();
+    
+    IF (key_id IS NOT NULL) THEN
+        INSERT INTO Pedido (idConsecionaria, fecha) VALUES (key_id, now());
+        SET ultimo_pedido = LAST_INSERT_ID();
+        CALL altaVehiculo(idModeloTemp, cantidad, ultimo_detalle, id);
+    ELSE
+        SET res = -1;
+        SET msg = 'No existe Concesionaria';
+        SELECT res, msg;
+    END IF;
+
+    SET idP = ultimo_pedido;
 END
 //
 DELIMITER ;
