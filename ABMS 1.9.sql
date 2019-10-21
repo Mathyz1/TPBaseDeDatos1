@@ -260,24 +260,6 @@ END
 //
 DELIMITER ;
 
-DROP PROCEDURE IF EXISTS modificacionVehiculo;
-DELIMITER //
-CREATE PROCEDURE modificacionVehiculo(numChasis INT, modelo  VARCHAR(45), descripcion VARCHAR(45), idpedido INT, idmodelo INT )
-BEGIN 
-    update proveedor set numChasis=numChasisP, modelo=modeloP, descripcion=descripcionP, idpedido=idpedidoP,idmodelo=idmodeloP ;
-END
-//
-DELIMITER ;
-
-
-DROP PROCEDURE IF EXISTS bajaVehiculo;
-DELIMITER //
-CREATE PROCEDURE bajaVehiculo(numChasis INT)
-BEGIN 
-    update Vehiculo set eliminado=1,fechaEliminado=now() where numChasis=numChasisP;
-END
-//
-DELIMITER ;
 
 DROP PROCEDURE IF EXISTS altaProvedor;
 DELIMITER //
