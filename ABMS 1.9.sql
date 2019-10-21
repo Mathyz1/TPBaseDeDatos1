@@ -11,7 +11,7 @@ BEGIN
     WHERE Concesionaria.cuit = cuit;
     
     IF (recv IS NULL) THEN
-        insert into Concesionaria (cuit, razonSocial, eliminado, fechaEliminado) values (cuit, razonSocial, 0, null);
+        INSERT INTO Concesionaria (cuit, razonSocial, eliminado, fechaEliminado) VALUES (cuit, razonSocial, 0, NULL);
         SET res = 0;
         SET msg = '';
     ELSE
@@ -45,7 +45,6 @@ BEGIN
     END IF;
     
     SELECT res, msg;
-    
 END
 //
 DELIMITER ;
@@ -122,9 +121,61 @@ BEGIN
     FROM Modelo
     WHERE Modelo.descripcion = modelo;
     
-    INSERT INTO DetallePedido(Pedido_idPedido, Modelo_idModelo, cantidad) VALUES (id, idModeloTemp, cantidad);
-    SET ultimo_detalle = LAST_INSERT_ID();
-    CALL altaVehiculo(idModeloTemp, cantidad, ultimo_detalle, id);
+    IF (idModeloTemp IS NULL) THEN
+        INSERT INTO DetallePedido(Pedido_idPedido, Modelo_idModelo, cantidad) VALUES (id, idModeloTemp, cantidad);
+        SET ultimo_detalle = LAST_INSERT_ID();
+        CALL altaVehiculo(idModeloTemp, cantidad, ultimo_detalle, id);
+        SET res = 0;
+        SET msg = '';
+    ELSE
+        SET res = -1;
+        SET msg = 'Ya existe modelo';
+        SELECT res, msg;
+    END IF;
+END
+//
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS modificacionDetallePedido;
+DELIMITER //
+CREATE PROCEDURE modificacionDetallePedido(idDetallePedido INT(11), modeloP VARCHAR(45), cantidadP INT(11), OUT res INT, OUT msg VARCHAR(45))
+BEGIN
+    DECLARE idModeloTemp INT(11);
+    SELECT idModelo INTO idModeloTemp
+    FROM Modelo
+    WHERE Modelo.descripcion = modeloP;
+    
+    IF (idModeloTemp IS NOT NULL) THEN
+        UPDATE DetallePedido SET Modelo_idModelo=idModeloTemp, cantidad=cantidadP WHERE DetallePedido.idDetallePedido=idDetallePedido;
+        SET res = 0;
+        SET msg = '';
+    ELSE
+        SET res = -1;
+        SET msg = 'No existe modelo';
+        SELECT res, msg;
+    END IF;
+END
+//
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS bajaDetallePedido;
+DELIMITER //
+CREATE PROCEDURE bajaDetallePedido(idDetallePedido INT(11), OUT res INT, OUT msg VARCHAR(45))
+BEGIN
+    DECLARE idDetalleTemp INT(11);
+    SELECT idDetallePedido INTO idDetalleTemp
+    FROM Modelo
+    WHERE DetallePedido.idDetallePedido = idDetallePedido;
+    
+    IF (idDetalleTemp IS NOT NULL) THEN
+        UPDATE DetallePedido SET eliminado=1, fechaEliminado=now() WHERE DetallePedido.idDetallePedido=idDetallePedido;
+        SET res = 0;
+        SET msg = '';
+    ELSE
+        SET res = -1;
+        SET msg = 'No existe Detalle Pedido';
+        SELECT res, msg;
+    END IF;
 END
 //
 DELIMITER ;
