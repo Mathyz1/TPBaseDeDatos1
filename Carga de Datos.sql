@@ -21,9 +21,9 @@ insert into Estacion(orden, descripcion, stock, LineaDeMontaje_idLineaDeMontaje,
 insert into Estacion(orden, descripcion, stock, LineaDeMontaje_idLineaDeMontaje, LineaDeMontaje_Modelo_idModelo) values (2, "", "2", 2, 2);
 
 /*partes porque tiene lo de baja logica si no tiene abm*/
-insert into Partes(descripcion) values ("neumatico");
+/*insert into Partes(descripcion) values ("neumatico");
 insert into Partes(descripcion) values ("frenos");
 insert into Partes(descripcion) values ("volante");
 insert into Partes(descripcion) values ("caño de escape");
-
+*/
 /*hay que hacer cambios en la base*/
