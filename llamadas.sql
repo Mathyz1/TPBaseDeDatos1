@@ -12,11 +12,13 @@ CALL bajaConcesionaria('1234567890', @res, @msg);
 
 /* ABM PEDIDOS */
 -- Damos de alta 3 pedidos para una conecionaria
-CALL altaPedido('1234567890', @idP);
+CALL altaPedido('1234567890', @idP, @res, @msg);
+CALL modificacionPedido(2, '1234567891', "2020-01-01", @res, @msg);
+CALL bajaPedido(5, @res, @msg);
 SET @id := @idP;
-CALL altaDetallePedido('Ranger', 15, @id);
-CALL altaDetallePedido('KA', 10, @id);
-CALL altaDetallePedido('Focus', 35, @id);
+CALL altaDetallePedido('Ranger', 15, @id, @res, @msg);
+CALL altaDetallePedido('KA', 10, @id, @res, @msg);
+CALL altaDetallePedido('Focus', 35, @id, @res, @msg);
 
 SELECT @id;
 
