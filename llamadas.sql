@@ -5,7 +5,7 @@ USE TerminalAutomotriz;
 CALL altaConcesionaria('1234567890', 'Ford1', @res, @msg);
 CALL altaConcesionaria('1234567891', 'Ford2', @res, @msg);
 -- Modificamos el nombre de una concesionaria
-CALL modificacionConcesionaria('1234567891', "FordNuevo", @res, @msg);
+CALL modificacionConcesionaria('1234567890', "FordNuevo", @res, @msg);
 -- Baja lógica de una concesionaria
 CALL bajaConcesionaria('1234567891', @res, @msg);
 
