@@ -292,9 +292,21 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS altaPartes;
 DELIMITER //
-CREATE PROCEDURE altaPartes(descripcion VARCHAR(45))
-BEGIN 
-    insert into Partes (descripcion)values(descripcion);
+CREATE PROCEDURE altaPartes(descripcion VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
+BEGIN
+    DECLARE key_id_PRT INT(11);
+    -- Para saber si existe ya una parte con el mismo nombre
+    SELECT PRT.idPartes INTO key_id_PRT
+    FROM Partes AS PRT
+    WHERE PRT.descripcion = descripcion;
+
+    IF (key_id_PRT IS NULL) THEN
+        INSERT INTO Partes (descripcion) VALUES (descripcion);
+    ELSE
+        SET res = -1;
+        SET msg = 'Ya existe Parte con ese nombre';
+        SELECT res, msg;
+    END IF;
 END
 //
 DELIMITER ;
@@ -302,9 +314,21 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS modificacionPartes;
 DELIMITER //
-CREATE PROCEDURE modificacionPartes(descripcionN VARCHAR(45), descripcionV varchar(45))
-BEGIN 
-    update Partes set descripcion=descripcionN where descripcion=descripcionV;
+CREATE PROCEDURE modificacionPartes(descripcionNuevo VARCHAR(45), descripcionViejo varchar(45), OUT res INT, OUT msg VARCHAR(45))
+BEGIN
+    DECLARE key_id_PRT INT(11);
+    -- Para saber si existe ya una parte con el mismo nombre
+    SELECT PRT.idPartes INTO key_id_PRT
+    FROM Partes AS PRT
+    WHERE PRT.descripcion = descripcionNuevo;
+
+    IF (key_id_PRT IS NOT NULL) THEN
+        UPDATE Partes AS PRT SET PRT.descripcion=descripcionNuevo WHERE PRT.idPartes=key_id_PRT;
+    ELSE
+        SET res = -1;
+        SET msg = 'No existe Parte para cambiar nombre';
+        SELECT res, msg;
+    END IF;
 END
 //
 DELIMITER ;
@@ -312,9 +336,21 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS bajaPartes;
 DELIMITER //
-CREATE PROCEDURE bajaPartes(descripcion VARCHAR(45))
-BEGIN 
-    update Partes set eliminado=1,fechaEliminado=now() where descripcion=descripcion;
+CREATE PROCEDURE bajaPartes(descripcion VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
+BEGIN
+    DECLARE key_id_PRT INT(11);
+    -- Para saber si existe ya una parte con el mismo nombre
+    SELECT PRT.idPartes INTO key_id_PRT
+    FROM Partes AS PRT
+    WHERE PRT.descripcion = descripcion;
+
+    IF (key_id_PRT IS NOT NULL) THEN
+        UPDATE Partes AS PRT SET eliminado=1, fechaEliminado=now() WHERE PRT.idPartes=key_id_PRT;
+    ELSE
+        SET res = -1;
+        SET msg = 'No existe Parte';
+        SELECT res, msg;
+    END IF;
 END
 //
 DELIMITER ;
