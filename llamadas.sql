@@ -26,6 +26,20 @@ CALL modificacionDetallePedido(2, 'Ranger', 40, @res, @msg);
 CALL bajaDetallePedido(3, @res, @msg);
 CALL bajaDetallePedido(4, @res, @msg);
 
+/* ABM PARTES */
+-- Damos de alta las partes
+CALL altaPartes("motor", @res, @msg);
+CALL altaPartes("neumáticos", @res, @msg);
+CALL altaPartes("frenos", @res, @msg);
+CALL altaPartes("volante", @res, @msg);
+CALL altaPartes("caño de escape", @res, @msg);
+CALL altaPartes("cableado", @res, @msg);
+CALL altaPartes("airbag", @res, @msg);
+-- Modificación
+CALL modificacionPartes("cablerío", "cableado", @res, @msg);
+CALL modificacionPartes("turbo", "motor", @res, @msg);
+-- Baja
+CALL bajaPartes("airbag", @res, @msg);
 
 SELECT @id;
 
@@ -35,4 +49,5 @@ SELECT * FROM Pedido;
 SELECT * FROM DetallePedido;
 SELECT * FROM Modelo;
 SELECT * FROM Vehiculo;
+SELECT * FROM Partes;
 
