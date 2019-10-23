@@ -320,7 +320,7 @@ BEGIN
     -- Para saber si existe ya una parte con el mismo nombre
     SELECT PRT.idPartes INTO key_id_PRT
     FROM Partes AS PRT
-    WHERE PRT.descripcion = descripcionNuevo;
+    WHERE PRT.descripcion = descripcionViejo;
 
     IF (key_id_PRT IS NOT NULL) THEN
         UPDATE Partes AS PRT SET PRT.descripcion=descripcionNuevo WHERE PRT.idPartes=key_id_PRT;

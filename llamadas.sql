@@ -36,8 +36,8 @@ CALL altaPartes("caño de escape", @res, @msg);
 CALL altaPartes("cableado", @res, @msg);
 CALL altaPartes("airbag", @res, @msg);
 -- Modificación
-CALL modificacionPartes("cableado", "cablerío", @res, @msg);
-CALL modificacionPartes("motor", "turbo", @res, @msg);
+CALL modificacionPartes("cablerío", "cableado", @res, @msg);
+CALL modificacionPartes("turbo", "motor", @res, @msg);
 -- Baja
 CALL bajaPartes("airbag", @res, @msg);
 
