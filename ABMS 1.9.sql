@@ -261,11 +261,25 @@ END
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS altaProvedor;
+DROP PROCEDURE IF EXISTS altaProveedor;
 DELIMITER //
-CREATE PROCEDURE altaProvedor(cuit INT, razonSocial VARCHAR(45), precio INT )
-BEGIN 
-    insert into provedor values(cuit, razonSocial ,precio);
+CREATE PROCEDURE altaProveedor(cuit VARCHAR(45), razonSocial VARCHAR(45), OUT res INT, OUT msg VARCHAR(45) )
+BEGIN
+    DECLARE recv VARCHAR(45);
+    SELECT cuit INTO recv
+    FROM Proveedor 
+    WHERE Proveedor.cuit = cuit;
+    
+    IF (recv IS NULL) THEN
+        INSERT INTO Proveedor (cuit, razonSocial) VALUES(cuit, razonSocial);
+        SET res = 0;
+        SET msg = '';
+    ELSE
+        SET res = -1;
+        SET msg = 'CUIT YA EXISTENTE';
+    END IF;
+    
+    SELECT res, msg;
 END
 //
 DELIMITER ;
@@ -273,9 +287,23 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS modificacionProveedor;
 DELIMITER //
-CREATE PROCEDURE modificacionProveedor(cuit INT, razonSocial VARCHAR(45), precio INT )
+CREATE PROCEDURE modificacionProveedor(cuitViejo VARCHAR(45), cuitNuevo VARCHAR(45), razonSocial VARCHAR(45), OUT res INT, OUT msg VARCHAR(45) )
 BEGIN 
-    update proveedor set cuit=cuitP, razonSocial=razonSocialP, razonSocial=Concesionaria_cuitP where cuit=cuitP;
+    DECLARE key_id INT;
+    SELECT idproveedor INTO key_id
+    FROM Proveedor 
+    WHERE Proveedor.cuit = cuitViejo;
+    
+    IF (key_id IS NOT NULL) THEN
+        UPDATE Proveedor AS P SET P.cuit=cuitNuevo, P.razonSocial=razonSocial WHERE P.idProveedor = key_id;
+        SET res = 0;
+        SET msg = '';
+    ELSE
+        SET res = -1;
+        SET msg = 'CUIT NO EXISTENTE';
+    END IF;
+    
+    SELECT res, msg; 
 END
 //
 DELIMITER ;
@@ -283,9 +311,23 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS bajaProveedor;
 DELIMITER //
-CREATE PROCEDURE bajaProveedor(cuit INT)
-BEGIN 
-    update Proveedor set eliminado=1,fechaEliminado=now() where cuit=cuitP;
+CREATE PROCEDURE bajaProveedor(cuit VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
+BEGIN
+    DECLARE key_id INT;
+    SELECT idProveedor INTO key_id
+    FROM Proveedor
+    WHERE Proveedor.cuit = cuit;
+    
+    IF (key_id IS NOT NULL) THEN
+       UPDATE Proveedor SET eliminado=1, fechaEliminado=now() WHERE idProveedor = key_id;
+        SET res = 0;
+        SET msg = '';
+    ELSE
+        SET res = -1;
+        SET msg = 'CUIT NO EXISTENTE';
+    END IF;
+    
+    SELECT res, msg;
 END
 //
 DELIMITER ;
