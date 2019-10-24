@@ -26,6 +26,16 @@ CALL modificacionDetallePedido(2, 'Ranger', 40, @res, @msg);
 CALL bajaDetallePedido(3, @res, @msg);
 CALL bajaDetallePedido(4, @res, @msg);
 
+/* ABM PROVEEDOR */
+-- Damos de alta 3 proveedores
+CALL altaProveedor("1234567891", "Empresa1", @res, @msg);
+CALL altaProveedor("1234567892", "Empresa2", @res, @msg);
+CALL altaProveedor("1234567893", "Empresa3", @res, @msg);
+-- Modificación
+CALL modificacionProveedor("1234567891", "1000567893", "EmpresaNueva1", @res, @msg);
+-- Baja
+CALL bajaProveedor("1234567893", @res, @msg);
+
 /* ABM PARTES */
 -- Damos de alta las partes
 CALL altaPartes("motor", @res, @msg);
@@ -49,5 +59,6 @@ SELECT * FROM Pedido;
 SELECT * FROM DetallePedido;
 SELECT * FROM Modelo;
 SELECT * FROM Vehiculo;
+SELECT * FROM Proveedor;
 SELECT * FROM Partes;
 
