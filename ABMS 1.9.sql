@@ -1,8 +1,11 @@
 USE TerminalAutomotriz;
 
+/*--------------------------------------------------------------------------------------------------------------------------------------------*/
+/*----ABM CONCESIONARIA-----------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------------------------*/
+
 DROP PROCEDURE IF EXISTS altaConcesionaria;
 DELIMITER //
-
 CREATE PROCEDURE altaConcesionaria(cuit VARCHAR(45), razonSocial VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE recv VARCHAR(45);
@@ -73,6 +76,9 @@ END
 //
 DELIMITER ;
 
+/*--------------------------------------------------------------------------------------------------------------------------------------------*/
+/*----ABM PEDIDO------------------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------------------------*/
 
 DROP PROCEDURE IF EXISTS altaPedido;
 DELIMITER //
@@ -116,10 +122,15 @@ BEGIN
     
     IF (key_id_P IS NOT NULL AND key_id_C IS NOT NULL) THEN
         UPDATE Pedido AS P SET idConcesionaria=key_id_C, fecha=fecha_nueva WHERE P.idPedido = idPedido;
-    ELSE
-        SET res = -1;
-        SET msg = 'No existe Concesionaria';
-        SELECT res, msg;
+    ELSE if(key_id_C IS NULL) THEN
+			SET res = -1;
+			SET msg = 'No existe Concesionaria';
+			SELECT res, msg;
+		else
+			SET res = -1;
+			SET msg = 'No existe Pedido';
+			SELECT res, msg;
+        END IF;
     END IF;
 END
 //
@@ -145,6 +156,9 @@ END
 //
 DELIMITER ;
 
+/*--------------------------------------------------------------------------------------------------------------------------------------------*/
+/*----ABM DETALLE PEDIDO(VEHICULO)------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------------------------*/
 
 DROP PROCEDURE IF EXISTS altaDetallePedido;
 DELIMITER //
@@ -177,22 +191,47 @@ CREATE PROCEDURE modificacionDetallePedido(idDetallePedido INT(11), modelo VARCH
 BEGIN
     DECLARE key_id_M INT(11);
     DECLARE key_id_DP INT(11);
+    DECLARE replModelo INT(11);
+    DECLARE replCantidad INT(11);
+    
     SELECT idModelo INTO key_id_M
     FROM Modelo AS M
     WHERE M.descripcion = modelo;
+    
     SELECT DP.idDetallePedido INTO key_id_DP
+    FROM DetallePedido AS DP 
+    WHERE DP.idDetallePedido = idDetallePedido;
+    
+     -- Para ver si son repetidos los valores
+    SELECT DP.idModelo INTO replModelo
+    FROM DetallePedido AS DP
+    WHERE DP.idDetallePedido = idDetallePedido;
+    
+    SELECT DP.cantidad INTO replCantidad
     FROM DetallePedido AS DP 
     WHERE DP.idDetallePedido = idDetallePedido;
 
     IF (key_id_DP IS NOT NULL AND key_id_M IS NOT NULL) THEN
-        UPDATE DetallePedido AS DP SET DP.Modelo_idModelo=key_id_M, DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
+		set foreign_key_checks=0;
+        IF (replModelo IS NULL AND replCantidad IS NULL) THEN
+			UPDATE DetallePedido AS DP SET DP.Modelo_idModelo=key_id_M, DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
+        else if  (replModelo IS not NULL) THEN
+				UPDATE DetallePedido AS DP SET DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
+			else
+				UPDATE DetallePedido AS DP SET DP.Modelo_idModelo=key_id_M WHERE DP.idDetallePedido = idDetallePedido;
+			end if;
+		end if;
         SET res = 0;
         SET msg = '';
-    ELSE
-        SET res = -1;
-        SET msg = 'No existe Modelo o Detalle del Pedido';
-        SELECT res, msg;
+    ELSE if(key_id_DP IS NOT NULL)then
+			SET res = -1;
+			SET msg = 'No existe Detalle del Pedido';
+		else
+			SET res = -1;
+			SET msg = 'No existe Modelo';
+		end if;
     END IF;
+    SELECT res, msg;
 END
 //
 DELIMITER ;
@@ -259,6 +298,64 @@ BEGIN
 END
 //
 DELIMITER ;
+
+DROP PROCEDURE IF EXISTS diferencia;
+DELIMITER //
+CREATE PROCEDURE diferencia(idDetallePedido INT(11), cantidad INT(11), OUT dif INT)
+BEGIN
+    DECLARE valor INT(11);
+    SELECT COUNT(DP.idDetallePedido) INTO valor
+    FROM DetallePedido AS DP
+    WHERE DP.idDetallePedido = idDetallePedido;
+    
+	set dif=cantidad-valor;
+END
+//
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS modifNEGVehiculo;
+DELIMITER //
+CREATE PROCEDURE modifNEGVehiculo(idModelo INT(11), cantidad INT(11), idDetallePedido INT(11), INOUT id INT(11))
+BEGIN
+    DECLARE idPedidoParametro INTEGER DEFAULT 0;
+    DECLARE idModeloParametro INTEGER;
+    DECLARE modelo VARCHAR(45);
+    DECLARE nCantidadDetalle INT;
+    DECLARE nInsertados INT;
+    DECLARE finished INT DEFAULT 0;
+    DECLARE curDetallePedido
+        CURSOR FOR
+            SELECT Modelo_idModelo, cantidad FROM DetallePedido WHERE idDetallePedido = ultimo_detalle;
+    DECLARE CONTINUE HANDLER
+        FOR NOT FOUND SET finished = 1;
+    OPEN curDetallePedido;
+    
+    -- Obtenemos el modelo
+    SELECT descripcion INTO modelo
+    FROM Modelo
+    WHERE Modelo.idModelo = idModelo;
+    
+    getDetalle: LOOP
+        FETCH curDetallePedido INTO idModeloParametro, nCantidadDetalle;
+        IF finished = 1 THEN
+            LEAVE getDetalle;
+        END IF;
+        
+        SET nInsertados = 0;
+        WHILE nInsertados < nCantidadDetalle DO
+            INSERT INTO Vehiculo(DetallePedido_idDetallePedido, DetallePedido_Modelo_idModelo, DetallePedido_Pedido_idPedido, descripcion) 
+                VALUES (ultimo_detalle, idModeloParametro, id, modelo);
+            SET nInsertados = nInsertados  + 1;
+        END WHILE;
+    END LOOP getDetalle;
+    -- Elimino el cursor de memoria
+    CLOSE curDetallePedido;
+END
+//
+DELIMITER ;
+/*--------------------------------------------------------------------------------------------------------------------------------------------*/
+/*----ABM PROVEEDOR---------------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------------------------*/
 
 
 DROP PROCEDURE IF EXISTS altaProveedor;
@@ -331,6 +428,11 @@ BEGIN
 END
 //
 DELIMITER ;
+
+/*--------------------------------------------------------------------------------------------------------------------------------------------*/
+/*----ABM PARTES------------------------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------------------------*/
+
 
 DROP PROCEDURE IF EXISTS altaPartes;
 DELIMITER //
