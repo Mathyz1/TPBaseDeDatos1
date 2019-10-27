@@ -161,12 +161,12 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `TerminalAutomotriz`.`Proveedor`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Proveedor` (
-  `idProveedor` INT(11) NOT NULL AUTO_INCREMENT,
+  -- `idProveedor` INT(11) NOT NULL AUTO_INCREMENT,
   `cuit` VARCHAR(45) NOT NULL,
   `razonSocial` VARCHAR(45) NOT NULL,
   `eliminado` TINYINT(1) NOT NULL DEFAULT 0,
   `fechaEliminado` DATETIME NULL DEFAULT NULL,
-  PRIMARY KEY (`idProveedor`))
+  PRIMARY KEY (`cuit`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
@@ -176,12 +176,12 @@ DEFAULT CHARACTER SET = utf8;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Partes_has_Proveedor` (
   `Partes_idPartes` INT(11) NOT NULL,
-  `Proveedor_idProveedor` INT(11) NOT NULL,
+  `Proveedor_cuit` VARCHAR(45) NOT NULL,
   `precio` VARCHAR(45) NOT NULL,
   `eliminado` TINYINT(1) NOT NULL DEFAULT 0,
   `fechaEliminado` DATETIME NULL DEFAULT NULL,
-  PRIMARY KEY (`Partes_idPartes`, `Proveedor_idProveedor`),
-  INDEX `fk_Partes_has_Proveedor_Proveedor1_idx` (`Proveedor_idProveedor` ASC),
+  PRIMARY KEY (`Partes_idPartes`, `Proveedor_cuit`),
+  INDEX `fk_Partes_has_Proveedor_Proveedor1_idx` (`Proveedor_cuit` ASC),
   INDEX `fk_Partes_has_Proveedor_Partes1_idx` (`Partes_idPartes` ASC),
   CONSTRAINT `fk_Partes_has_Proveedor_Partes1`
     FOREIGN KEY (`Partes_idPartes`)
@@ -189,8 +189,8 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Partes_has_Proveedor` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_Partes_has_Proveedor_Proveedor1`
-    FOREIGN KEY (`Proveedor_idProveedor`)
-    REFERENCES `TerminalAutomotriz`.`Proveedor` (`idProveedor`)
+    FOREIGN KEY (`Proveedor_cuit`)
+    REFERENCES `TerminalAutomotriz`.`Proveedor` (`cuit`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
