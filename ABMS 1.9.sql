@@ -172,7 +172,7 @@ BEGIN
     IF (key_id_M IS NOT NULL) THEN
         INSERT INTO DetallePedido(Pedido_idPedido, Modelo_idModelo, cantidad) VALUES (id, key_id_M, cantidad);
         SET ultimo_detalle = LAST_INSERT_ID();
-        CALL altaVehiculo(key_id_M, cantidad, ultimo_detalle, id);
+        CALL altaVehiculo(key_id_M, ultimo_detalle, id);
         SET res = 0;
         SET msg = '';
     ELSE
@@ -202,7 +202,7 @@ BEGIN
     WHERE DP.idDetallePedido = idDetallePedido;
     
      -- Para ver si son repetidos los valores
-    SELECT DP.idModelo INTO replModelo
+    SELECT DP.Modelo_idModelo INTO replModelo
     FROM DetallePedido AS DP
     WHERE DP.idDetallePedido = idDetallePedido;
     
@@ -259,9 +259,8 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS altaVehiculo;
 DELIMITER //
-CREATE PROCEDURE altaVehiculo(idModelo INT(11), cantidad INT(11), ultimo_detalle INT(11), INOUT id INT(11))
+CREATE PROCEDURE altaVehiculo(idModelo INT(11), ultimo_detalle INT(11), INOUT id INT(11))
 BEGIN
-    DECLARE idPedidoParametro INTEGER DEFAULT 0;
     DECLARE idModeloParametro INTEGER;
     DECLARE modelo VARCHAR(45);
     DECLARE nCantidadDetalle INT;
@@ -314,9 +313,8 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS modifNEGVehiculo;
 DELIMITER //
-CREATE PROCEDURE modifNEGVehiculo(idModelo INT(11), cantidad INT(11), idDetallePedido INT(11), INOUT id INT(11))
+CREATE PROCEDURE modifNEGVehiculo(idModelo INT(11), idDetallePedido INT(11), INOUT id INT(11))
 BEGIN
-    DECLARE idPedidoParametro INTEGER DEFAULT 0;
     DECLARE idModeloParametro INTEGER;
     DECLARE modelo VARCHAR(45);
     DECLARE nCantidadDetalle INT;
@@ -324,7 +322,7 @@ BEGIN
     DECLARE finished INT DEFAULT 0;
     DECLARE curDetallePedido
         CURSOR FOR
-            SELECT Modelo_idModelo, cantidad FROM DetallePedido WHERE idDetallePedido = ultimo_detalle;
+            SELECT Modelo_idModelo, cantidad FROM DetallePedido WHERE idDetallePedido = idDetallePedido;
     DECLARE CONTINUE HANDLER
         FOR NOT FOUND SET finished = 1;
     OPEN curDetallePedido;

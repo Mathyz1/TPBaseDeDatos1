@@ -51,8 +51,6 @@ CALL modificacionPartes("turbo", "motor", @res, @msg);
 -- Baja
 CALL bajaPartes("airbag", @res, @msg);
 
-SELECT @id;
-
 -- Testing
 SELECT * FROM Concesionaria;
 SELECT * FROM Pedido;
