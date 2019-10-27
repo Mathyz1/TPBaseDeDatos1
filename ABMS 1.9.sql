@@ -83,14 +83,14 @@ DROP PROCEDURE IF EXISTS altaPedido;
 DELIMITER //
 CREATE PROCEDURE altaPedido(Concesionaria_cuit VARCHAR(45), OUT idP INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE key_id_C INT(11);
+    DECLARE recv_cuit VARCHAR(45);
     DECLARE ultimo_pedido INT(11) DEFAULT NULL;
-    SELECT idConcesionaria INTO key_id_C
+    SELECT cuit INTO recv_cuit
     FROM Concesionaria 
     WHERE Concesionaria.cuit = Concesionaria_cuit;
 
-    IF (key_id_C IS NOT NULL) THEN
-        INSERT INTO Pedido (idConcesionaria, fecha) VALUES (key_id_C, now());
+    IF (recv_cuit IS NOT NULL) THEN
+        INSERT INTO Pedido (Concesionaria_cuit, fecha) VALUES (Concesionaria_cuit, now());
         SET ultimo_pedido = LAST_INSERT_ID();
     ELSE
         SET res = -1;
@@ -108,10 +108,10 @@ DROP PROCEDURE IF EXISTS modificacionPedido;
 DELIMITER //
 CREATE PROCEDURE modificacionPedido(idPedido INT, Concesionaria_cuit VARCHAR(45), fecha_nueva DATE, OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE key_id_C INT(11);
+    DECLARE recv_cuit VARCHAR(45);
     DECLARE key_id_P INT(11);
     -- Para verificar que existe la concesionaria que queremos cambiar
-    SELECT idConcesionaria INTO key_id_C
+    SELECT cuit INTO recv_cuit
     FROM Concesionaria AS C
     WHERE C.cuit = Concesionaria_cuit;
     -- Para verificar que existe el pedido
@@ -119,9 +119,9 @@ BEGIN
     FROM Pedido AS P
     WHERE P.idPedido = idPedido;
     
-    IF (key_id_P IS NOT NULL AND key_id_C IS NOT NULL) THEN
-        UPDATE Pedido AS P SET idConcesionaria=key_id_C, fecha=fecha_nueva WHERE P.idPedido = idPedido;
-    ELSE if(key_id_C IS NULL) THEN
+    IF (key_id_P IS NOT NULL AND recv_cuit IS NOT NULL) THEN
+        UPDATE Pedido AS P SET P.Concesionaria_cuit=Concesionaria_cuit, P.fecha=fecha_nueva WHERE P.idPedido = idPedido;
+    ELSE if(recv_cuit IS NULL) THEN
             SET res = -1;
             SET msg = 'No existe Concesionaria';
             SELECT res, msg;

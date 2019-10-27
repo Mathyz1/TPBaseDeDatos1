@@ -15,12 +15,12 @@ USE `TerminalAutomotriz` ;
 -- Table `TerminalAutomotriz`.`Concesionaria`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Concesionaria` (
-  `idConcesionaria` INT(11) NOT NULL AUTO_INCREMENT,
+  -- `idConcesionaria` INT(11) NOT NULL AUTO_INCREMENT,
   `cuit` VARCHAR(45) NOT NULL,
   `razonSocial` VARCHAR(45) NOT NULL,
   `eliminado` TINYINT(1) NOT NULL DEFAULT 0,
   `fechaEliminado` DATETIME NULL DEFAULT NULL,
-  PRIMARY KEY (`idConcesionaria`))
+  PRIMARY KEY (`cuit`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
@@ -42,14 +42,14 @@ DEFAULT CHARACTER SET = utf8;
 CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Pedido` (
   `idPedido` INT(11) NOT NULL AUTO_INCREMENT,
   `fecha` DATE NOT NULL,
-  `idConcesionaria` INT(11) NOT NULL,
+  `Concesionaria_cuit` VARCHAR(45) NOT NULL,
   `eliminado` TINYINT(1) NOT NULL DEFAULT 0,
   `fechaEliminado` DATETIME NULL DEFAULT NULL,
-  PRIMARY KEY (`idPedido`, `idConcesionaria`),
-  INDEX `fk_Pedido_Concesionaria1_idx` (`idConcesionaria` ASC),
+  PRIMARY KEY (`idPedido`, `Concesionaria_cuit`),
+  INDEX `fk_Pedido_Concesionaria1_idx` (`Concesionaria_cuit` ASC),
   CONSTRAINT `fk_Pedido_Concesionaria1`
-    FOREIGN KEY (`idConcesionaria`)
-    REFERENCES `TerminalAutomotriz`.`Concesionaria` (`idConcesionaria`)
+    FOREIGN KEY (`Concesionaria_cuit`)
+    REFERENCES `TerminalAutomotriz`.`Concesionaria` (`cuit`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
