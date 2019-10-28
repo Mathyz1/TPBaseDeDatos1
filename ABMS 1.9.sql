@@ -8,12 +8,12 @@ DROP PROCEDURE IF EXISTS altaConcesionaria;
 DELIMITER //
 CREATE PROCEDURE altaConcesionaria(cuit VARCHAR(45), razonSocial VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE recv VARCHAR(45);
-    SELECT cuit INTO recv
+    DECLARE recv_cuit VARCHAR(45);
+    SELECT cuit INTO recv_cuit
     FROM Concesionaria 
     WHERE Concesionaria.cuit = cuit;
     
-    IF (recv IS NULL) THEN
+    IF (recv_cuit IS NULL) THEN
         INSERT INTO Concesionaria (cuit, razonSocial, eliminado, fechaEliminado) VALUES (cuit, razonSocial, 0, NULL);
         SET res = 0;
         SET msg = '';
@@ -32,13 +32,13 @@ DROP PROCEDURE IF EXISTS modificacionConcesionaria;
 DELIMITER //
 CREATE PROCEDURE modificacionConcesionaria(cuitP VARCHAR(45), razonSocialP VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE key_id INT;
-    SELECT idConcesionaria INTO key_id
-    FROM Concesionaria 
-    WHERE Concesionaria.cuit = cuitP;
+    DECLARE recv_cuit VARCHAR(45);
+    SELECT C.cuit INTO recv_cuit
+    FROM Concesionaria AS C 
+    WHERE C.cuit = cuitP;
     
-    IF (key_id IS NOT NULL) THEN
-        UPDATE Concesionaria SET razonSocial=razonSocialP WHERE idConcesionaria=key_id;
+    IF (recv_cuit IS NOT NULL) THEN
+        UPDATE Concesionaria AS C SET C.razonSocial=razonSocialP WHERE C.cuit = cuitP;
         SET res = 0;
         SET msg = '';
     ELSE
@@ -56,14 +56,13 @@ DROP PROCEDURE IF EXISTS bajaConcesionaria;
 DELIMITER //
 CREATE PROCEDURE bajaConcesionaria(cuitP VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE recv VARCHAR(45);
-    DECLARE key_id INT;
-    SELECT idConcesionaria, cuit INTO key_id, recv
+    DECLARE recv_cuit VARCHAR(45);
+    SELECT cuit INTO recv_cuit
     FROM Concesionaria 
     WHERE Concesionaria.cuit = cuitP;
     
-    IF (recv IS NOT NULL) THEN
-        UPDATE Concesionaria SET eliminado=1, fechaEliminado=now() WHERE idConcesionaria=key_id;
+    IF (recv_cuit IS NOT NULL) THEN
+        UPDATE Concesionaria AS C SET eliminado=1, fechaEliminado=now() WHERE C.cuit = cuitP;
         SET res = 0;
         SET msg = '';
     ELSE
@@ -84,14 +83,14 @@ DROP PROCEDURE IF EXISTS altaPedido;
 DELIMITER //
 CREATE PROCEDURE altaPedido(Concesionaria_cuit VARCHAR(45), OUT idP INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE key_id_C INT(11);
+    DECLARE recv_cuit VARCHAR(45);
     DECLARE ultimo_pedido INT(11) DEFAULT NULL;
-    SELECT idConcesionaria INTO key_id_C
+    SELECT cuit INTO recv_cuit
     FROM Concesionaria 
     WHERE Concesionaria.cuit = Concesionaria_cuit;
 
-    IF (key_id_C IS NOT NULL) THEN
-        INSERT INTO Pedido (idConcesionaria, fecha) VALUES (key_id_C, now());
+    IF (recv_cuit IS NOT NULL) THEN
+        INSERT INTO Pedido (Concesionaria_cuit, fecha) VALUES (Concesionaria_cuit, now());
         SET ultimo_pedido = LAST_INSERT_ID();
     ELSE
         SET res = -1;
@@ -109,10 +108,10 @@ DROP PROCEDURE IF EXISTS modificacionPedido;
 DELIMITER //
 CREATE PROCEDURE modificacionPedido(idPedido INT, Concesionaria_cuit VARCHAR(45), fecha_nueva DATE, OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE key_id_C INT(11);
+    DECLARE recv_cuit VARCHAR(45);
     DECLARE key_id_P INT(11);
     -- Para verificar que existe la concesionaria que queremos cambiar
-    SELECT idConcesionaria INTO key_id_C
+    SELECT cuit INTO recv_cuit
     FROM Concesionaria AS C
     WHERE C.cuit = Concesionaria_cuit;
     -- Para verificar que existe el pedido
@@ -120,16 +119,16 @@ BEGIN
     FROM Pedido AS P
     WHERE P.idPedido = idPedido;
     
-    IF (key_id_P IS NOT NULL AND key_id_C IS NOT NULL) THEN
-        UPDATE Pedido AS P SET idConcesionaria=key_id_C, fecha=fecha_nueva WHERE P.idPedido = idPedido;
-    ELSE if(key_id_C IS NULL) THEN
-			SET res = -1;
-			SET msg = 'No existe Concesionaria';
-			SELECT res, msg;
-		else
-			SET res = -1;
-			SET msg = 'No existe Pedido';
-			SELECT res, msg;
+    IF (key_id_P IS NOT NULL AND recv_cuit IS NOT NULL) THEN
+        UPDATE Pedido AS P SET P.Concesionaria_cuit=Concesionaria_cuit, P.fecha=fecha_nueva WHERE P.idPedido = idPedido;
+    ELSE if(recv_cuit IS NULL) THEN
+            SET res = -1;
+            SET msg = 'No existe Concesionaria';
+            SELECT res, msg;
+        else
+            SET res = -1;
+            SET msg = 'No existe Pedido';
+            SELECT res, msg;
         END IF;
     END IF;
 END
@@ -173,7 +172,7 @@ BEGIN
     IF (key_id_M IS NOT NULL) THEN
         INSERT INTO DetallePedido(Pedido_idPedido, Modelo_idModelo, cantidad) VALUES (id, key_id_M, cantidad);
         SET ultimo_detalle = LAST_INSERT_ID();
-        CALL altaVehiculo(key_id_M, cantidad, ultimo_detalle, id);
+        CALL altaVehiculo(key_id_M, ultimo_detalle, id);
         SET res = 0;
         SET msg = '';
     ELSE
@@ -203,7 +202,7 @@ BEGIN
     WHERE DP.idDetallePedido = idDetallePedido;
     
      -- Para ver si son repetidos los valores
-    SELECT DP.idModelo INTO replModelo
+    SELECT DP.Modelo_idModelo INTO replModelo
     FROM DetallePedido AS DP
     WHERE DP.idDetallePedido = idDetallePedido;
     
@@ -212,24 +211,24 @@ BEGIN
     WHERE DP.idDetallePedido = idDetallePedido;
 
     IF (key_id_DP IS NOT NULL AND key_id_M IS NOT NULL) THEN
-		set foreign_key_checks=0;
+        set foreign_key_checks=0;
         IF (replModelo IS NULL AND replCantidad IS NULL) THEN
-			UPDATE DetallePedido AS DP SET DP.Modelo_idModelo=key_id_M, DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
-        else if  (replModelo IS not NULL) THEN
-				UPDATE DetallePedido AS DP SET DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
-			else
-				UPDATE DetallePedido AS DP SET DP.Modelo_idModelo=key_id_M WHERE DP.idDetallePedido = idDetallePedido;
-			end if;
-		end if;
+            UPDATE DetallePedido AS DP SET DP.Modelo_idModelo=key_id_M, DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
+        ELSE IF  (replModelo IS not NULL) THEN
+                UPDATE DetallePedido AS DP SET DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
+            ELSE
+                UPDATE DetallePedido AS DP SET DP.Modelo_idModelo=key_id_M WHERE DP.idDetallePedido = idDetallePedido;
+            END IF;
+        END IF;
         SET res = 0;
         SET msg = '';
-    ELSE if(key_id_DP IS NOT NULL)then
-			SET res = -1;
-			SET msg = 'No existe Detalle del Pedido';
-		else
-			SET res = -1;
-			SET msg = 'No existe Modelo';
-		end if;
+    ELSE IF(key_id_DP IS NOT NULL) THEN
+            SET res = -1;
+            SET msg = 'No existe Detalle del Pedido';
+        ELSE
+            SET res = -1;
+            SET msg = 'No existe Modelo';
+        END IF;
     END IF;
     SELECT res, msg;
 END
@@ -260,9 +259,8 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS altaVehiculo;
 DELIMITER //
-CREATE PROCEDURE altaVehiculo(idModelo INT(11), cantidad INT(11), ultimo_detalle INT(11), INOUT id INT(11))
+CREATE PROCEDURE altaVehiculo(idModelo INT(11), ultimo_detalle INT(11), INOUT id INT(11))
 BEGIN
-    DECLARE idPedidoParametro INTEGER DEFAULT 0;
     DECLARE idModeloParametro INTEGER;
     DECLARE modelo VARCHAR(45);
     DECLARE nCantidadDetalle INT;
@@ -308,16 +306,15 @@ BEGIN
     FROM DetallePedido AS DP
     WHERE DP.idDetallePedido = idDetallePedido;
     
-	set dif=cantidad-valor;
+    set dif=cantidad-valor;
 END
 //
 DELIMITER ;
 
 DROP PROCEDURE IF EXISTS modifNEGVehiculo;
 DELIMITER //
-CREATE PROCEDURE modifNEGVehiculo(idModelo INT(11), cantidad INT(11), idDetallePedido INT(11), INOUT id INT(11))
+CREATE PROCEDURE modifNEGVehiculo(idModelo INT(11), idDetallePedido INT(11), INOUT id INT(11))
 BEGIN
-    DECLARE idPedidoParametro INTEGER DEFAULT 0;
     DECLARE idModeloParametro INTEGER;
     DECLARE modelo VARCHAR(45);
     DECLARE nCantidadDetalle INT;
@@ -325,7 +322,7 @@ BEGIN
     DECLARE finished INT DEFAULT 0;
     DECLARE curDetallePedido
         CURSOR FOR
-            SELECT Modelo_idModelo, cantidad FROM DetallePedido WHERE idDetallePedido = ultimo_detalle;
+            SELECT Modelo_idModelo, cantidad FROM DetallePedido WHERE idDetallePedido = idDetallePedido;
     DECLARE CONTINUE HANDLER
         FOR NOT FOUND SET finished = 1;
     OPEN curDetallePedido;
@@ -353,21 +350,20 @@ BEGIN
 END
 //
 DELIMITER ;
+
 /*--------------------------------------------------------------------------------------------------------------------------------------------*/
 /*----ABM PROVEEDOR---------------------------------------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------------------------*/
-
-
 DROP PROCEDURE IF EXISTS altaProveedor;
 DELIMITER //
-CREATE PROCEDURE altaProveedor(cuit VARCHAR(45), razonSocial VARCHAR(45), OUT res INT, OUT msg VARCHAR(45) )
+CREATE PROCEDURE altaProveedor(cuit VARCHAR(45), razonSocial VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE recv VARCHAR(45);
-    SELECT cuit INTO recv
+    DECLARE recv_cuit VARCHAR(45);
+    SELECT cuit INTO recv_cuit
     FROM Proveedor 
     WHERE Proveedor.cuit = cuit;
     
-    IF (recv IS NULL) THEN
+    IF (recv_cuit IS NULL) THEN
         INSERT INTO Proveedor (cuit, razonSocial) VALUES(cuit, razonSocial);
         SET res = 0;
         SET msg = '';
@@ -386,13 +382,13 @@ DROP PROCEDURE IF EXISTS modificacionProveedor;
 DELIMITER //
 CREATE PROCEDURE modificacionProveedor(cuitViejo VARCHAR(45), cuitNuevo VARCHAR(45), razonSocial VARCHAR(45), OUT res INT, OUT msg VARCHAR(45) )
 BEGIN 
-    DECLARE key_id INT;
-    SELECT idproveedor INTO key_id
+    DECLARE recv_cuit VARCHAR(45);
+    SELECT cuit INTO recv_cuit
     FROM Proveedor 
     WHERE Proveedor.cuit = cuitViejo;
     
-    IF (key_id IS NOT NULL) THEN
-        UPDATE Proveedor AS P SET P.cuit=cuitNuevo, P.razonSocial=razonSocial WHERE P.idProveedor = key_id;
+    IF (recv_cuit IS NOT NULL) THEN
+        UPDATE Proveedor AS P SET P.cuit=cuitNuevo, P.razonSocial=razonSocial WHERE P.cuit = cuitViejo;
         SET res = 0;
         SET msg = '';
     ELSE
@@ -410,13 +406,13 @@ DROP PROCEDURE IF EXISTS bajaProveedor;
 DELIMITER //
 CREATE PROCEDURE bajaProveedor(cuit VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-    DECLARE key_id INT;
-    SELECT idProveedor INTO key_id
+    DECLARE recv_cuit VARCHAR(45);
+    SELECT cuit INTO recv_cuit
     FROM Proveedor
     WHERE Proveedor.cuit = cuit;
     
-    IF (key_id IS NOT NULL) THEN
-       UPDATE Proveedor SET eliminado=1, fechaEliminado=now() WHERE idProveedor = key_id;
+    IF (recv_cuit IS NOT NULL) THEN
+       UPDATE Proveedor AS P SET P.eliminado=1, P.fechaEliminado=now() WHERE P.cuit = cuit;
         SET res = 0;
         SET msg = '';
     ELSE
@@ -432,8 +428,6 @@ DELIMITER ;
 /*--------------------------------------------------------------------------------------------------------------------------------------------*/
 /*----ABM PARTES------------------------------------------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------------------------*/
-
-
 DROP PROCEDURE IF EXISTS altaPartes;
 DELIMITER //
 CREATE PROCEDURE altaPartes(descripcion VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
