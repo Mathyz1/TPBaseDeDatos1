@@ -15,7 +15,6 @@ USE `TerminalAutomotriz` ;
 -- Table `TerminalAutomotriz`.`Concesionaria`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Concesionaria` (
-  -- `idConcesionaria` INT(11) NOT NULL AUTO_INCREMENT,
   `cuit` VARCHAR(45) NOT NULL,
   `razonSocial` VARCHAR(45) NOT NULL,
   `eliminado` TINYINT(1) NOT NULL DEFAULT 0,
@@ -161,7 +160,6 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `TerminalAutomotriz`.`Proveedor`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Proveedor` (
-  -- `idProveedor` INT(11) NOT NULL AUTO_INCREMENT,
   `cuit` VARCHAR(45) NOT NULL,
   `razonSocial` VARCHAR(45) NOT NULL,
   `eliminado` TINYINT(1) NOT NULL DEFAULT 0,
