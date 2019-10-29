@@ -368,7 +368,7 @@ BEGIN
     WHERE Proveedor.cuit = cuit;
     
     IF (recv_cuit IS NOT NULL) THEN
-       UPDATE Proveedor AS P SET P.eliminado=1, P.fechaEliminado=now() WHERE P.cuit = cuit;
+        UPDATE Proveedor AS P SET P.eliminado=1, P.fechaEliminado=now() WHERE P.cuit = cuit;
         SET res = 0;
         SET msg = '';
     ELSE
@@ -465,37 +465,34 @@ BEGIN
     DECLARE key_id_P INT(11);
     DECLARE key_id_M INT(11);
 
--- Para saber si existe un vehículo con ese número de chasis
-SELECT V.numChasis INTO existe 
-FROM Vehiculo AS V
-WHERE V.numChasis = numChasis;
-
--- Para saber si el vehículo está en producción
-SELECT RE.Vehiculo_numChasis INTO enProduccion 
-FROM RegistroEstacion AS RE
-WHERE RE.Vehiculo_numChasis = numChasis;
--- Para obtener id detalle pedido, pedido y modelo
-SELECT 
-    DetallePedido_idDetallePedido,
-    DetallePedido_Pedido_idPedido,
-    DetallePedido_Modelo_idModelo
-INTO key_id_DP , key_id_P , key_id_M
-FROM Vehiculo AS V
-WHERE V.numChasis = numChasis;
--- Para obtener datos de Linea de montaje
-SELECT lineademontaje_idLineaDeMontaje INTO key_id_LM
-FROM
-    RegistroLinea AS RL
-WHERE
-    RL.vehiculo_numChasis = numChasis;
--- Para obtener datos de estación
-SELECT idEstacion INTO key_id_E 
-FROM Estacion AS E
-WHERE E.orden = 1 AND LineaDeMontaje_idLineaDeMontaje = key_id_LM;
--- Para saber si hay un vehículo ocupando la estación
-SELECT RE.Vehiculo_numChasis INTO numChasis_id
-FROM RegistroEstacion AS RE
-WHERE RE.fechayHoraEgreso IS NULL
+    -- Para saber si existe un vehículo con ese número de chasis
+    SELECT V.numChasis INTO existe 
+    FROM Vehiculo AS V
+    WHERE V.numChasis = numChasis;
+    -- Para saber si el vehículo está en producción
+    SELECT RE.Vehiculo_numChasis INTO enProduccion 
+    FROM RegistroEstacion AS RE
+    WHERE RE.Vehiculo_numChasis = numChasis;
+    -- Para obtener id detalle pedido, pedido y modelo
+    SELECT 
+        DetallePedido_idDetallePedido,
+        DetallePedido_Pedido_idPedido,
+        DetallePedido_Modelo_idModelo
+    INTO key_id_DP , key_id_P , key_id_M
+    FROM Vehiculo AS V
+    WHERE V.numChasis = numChasis;
+    -- Para obtener datos de Linea de montaje
+    SELECT lineademontaje_idLineaDeMontaje INTO key_id_LM
+    FROM RegistroLinea AS RL
+    WHERE RL.vehiculo_numChasis = numChasis;
+    -- Para obtener datos de estación
+    SELECT idEstacion INTO key_id_E 
+    FROM Estacion AS E
+    WHERE E.orden = 1 AND LineaDeMontaje_idLineaDeMontaje = key_id_LM;
+    -- Para saber si hay un vehículo ocupando la estación
+    SELECT RE.Vehiculo_numChasis INTO numChasis_id
+    FROM RegistroEstacion AS RE
+    WHERE RE.fechayHoraEgreso IS NULL
         AND RE.Estacion_LineaDeMontaje_idLineaDeMontaje = key_id_LM
         AND RE.Estacion_idEstacion = key_id_E;
 
@@ -517,7 +514,7 @@ WHERE RE.fechayHoraEgreso IS NULL
             END IF;
         END IF;
     END IF;
-SELECT res, msg;
+    SELECT res, msg;
 END
 //
 DELIMITER ;
