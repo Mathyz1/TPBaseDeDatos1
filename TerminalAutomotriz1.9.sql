@@ -120,6 +120,32 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
+-- Table `terminalautomotriz`.`RegistroLinea`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`RegistroLinea` (
+  `lineademontaje_idLineaDeMontaje` INT(11) NOT NULL,
+  `lineademontaje_Modelo_idModelo` INT(11) NOT NULL,
+  `vehiculo_numChasis` INT(11) NOT NULL,
+  -- `vehiculo_DetallePedido_idDetallePedido` INT(11) NOT NULL,
+  -- `vehiculo_DetallePedido_Pedido_idPedido` INT(11) NOT NULL,
+  -- `vehiculo_DetallePedido_Modelo_idModelo` INT(11) NOT NULL,
+  PRIMARY KEY (`lineademontaje_idLineaDeMontaje`, `lineademontaje_Modelo_idModelo`, `vehiculo_numChasis`),
+  INDEX `fk_lineademontaje_has_vehiculo_vehiculo1_idx` (`vehiculo_numChasis` ASC) VISIBLE,
+  INDEX `fk_lineademontaje_has_vehiculo_lineademontaje1_idx` (`lineademontaje_Modelo_idModelo` ASC) VISIBLE,
+  CONSTRAINT `fk_lineademontaje_has_vehiculo_lineademontaje1`
+    FOREIGN KEY (`lineademontaje_idLineaDeMontaje` , `lineademontaje_Modelo_idModelo`)
+    REFERENCES `terminalautomotriz`.`lineademontaje` (`idLineaDeMontaje` , `Modelo_idModelo`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_lineademontaje_has_vehiculo_vehiculo1`
+    FOREIGN KEY (`vehiculo_numChasis`)
+    REFERENCES `terminalautomotriz`.`vehiculo` (`numChasis`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8;
+
+-- -----------------------------------------------------
 -- Table `TerminalAutomotriz`.`Partes`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Partes` (

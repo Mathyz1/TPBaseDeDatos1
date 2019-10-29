@@ -30,20 +30,28 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS modificacionConcesionaria;
 DELIMITER //
-CREATE PROCEDURE modificacionConcesionaria(cuitP VARCHAR(45), razonSocialP VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
+CREATE PROCEDURE modificacionConcesionaria(cuitViejo VARCHAR(45), cuitNuevo VARCHAR(45), razonSocialP VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE recv_cuit VARCHAR(45);
+    DECLARE recv_cuitNuevo VARCHAR(45);
     SELECT C.cuit INTO recv_cuit
     FROM Concesionaria AS C 
-    WHERE C.cuit = cuitP;
-    
-    IF (recv_cuit IS NOT NULL) THEN
-        UPDATE Concesionaria AS C SET C.razonSocial=razonSocialP WHERE C.cuit = cuitP;
+    WHERE C.cuit = cuitViejo;
+    SELECT C.cuit INTO recv_cuitNuevo
+    FROM Concesionaria AS C 
+    WHERE C.cuit = cuitNuevo;
+
+    IF (recv_cuit IS NOT NULL AND recv_cuitNuevo IS NULL) THEN
+        UPDATE Concesionaria AS C SET C.razonSocial=razonSocialP WHERE C.cuit = cuitViejo;
         SET res = 0;
         SET msg = '';
-    ELSE
-        SET res = -1;
-        SET msg = 'CUIT NO EXISTENTE';
+    ELSE IF (recv_cuit IS NULL) THEN
+            SET res = -1;
+            SET msg = 'CUIT NO EXISTENTE';
+        ELSE
+            SET res = -1;
+            SET msg = 'Ya existe Concesionaria con ese CUIT';
+        END IF;
     END IF;
     
     SELECT res, msg;
@@ -106,7 +114,7 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS modificacionPedido;
 DELIMITER //
-CREATE PROCEDURE modificacionPedido(idPedido INT, Concesionaria_cuit VARCHAR(45), fecha_nueva DATE, OUT res INT, OUT msg VARCHAR(45))
+CREATE PROCEDURE modificacionPedido(idPedido INT, Concesionaria_cuit VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE recv_cuit VARCHAR(45);
     DECLARE key_id_P INT(11);
@@ -120,7 +128,7 @@ BEGIN
     WHERE P.idPedido = idPedido;
     
     IF (key_id_P IS NOT NULL AND recv_cuit IS NOT NULL) THEN
-        UPDATE Pedido AS P SET P.Concesionaria_cuit=Concesionaria_cuit, P.fecha=fecha_nueva WHERE P.idPedido = idPedido;
+        UPDATE Pedido AS P SET P.Concesionaria_cuit=Concesionaria_cuit WHERE P.idPedido = idPedido;
     ELSE if(recv_cuit IS NULL) THEN
             SET res = -1;
             SET msg = 'No existe Concesionaria';
@@ -248,6 +256,8 @@ CREATE PROCEDURE altaVehiculo(idModelo INT(11), ultimo_detalle INT(11), INOUT id
 BEGIN
     DECLARE idModeloParametro INTEGER;
     DECLARE modelo VARCHAR(45);
+    DECLARE key_id_LM INT;
+    DECLARE ultimo_vehiculo INT;
     DECLARE nCantidadDetalle INT;
     DECLARE nInsertados INT;
     DECLARE finished INT DEFAULT 0;
@@ -262,7 +272,12 @@ BEGIN
     SELECT descripcion INTO modelo
     FROM Modelo
     WHERE Modelo.idModelo = idModelo;
-    
+    -- Obtenemos el Linea de montaje ID
+    SELECT LM.idLineaDeMontaje INTO key_id_LM
+    FROM LineaDeMontaje AS LM
+    WHERE LM.Modelo_idModelo = idModelo
+    LIMIT 1;
+
     getDetalle: LOOP
         FETCH curDetallePedido INTO idModeloParametro, nCantidadDetalle;
         IF finished = 1 THEN
@@ -273,6 +288,8 @@ BEGIN
         WHILE nInsertados < nCantidadDetalle DO
             INSERT INTO Vehiculo(DetallePedido_idDetallePedido, DetallePedido_Modelo_idModelo, DetallePedido_Pedido_idPedido, descripcion) 
                 VALUES (ultimo_detalle, idModeloParametro, id, modelo);
+            SET ultimo_vehiculo = LAST_INSERT_ID();
+            INSERT INTO RegistroLinea VALUES(key_id_LM, idModelo, ultimo_vehiculo);
             SET nInsertados = nInsertados  + 1;
         END WHILE;
     END LOOP getDetalle;
@@ -315,17 +332,24 @@ DELIMITER //
 CREATE PROCEDURE modificacionProveedor(cuitViejo VARCHAR(45), cuitNuevo VARCHAR(45), razonSocial VARCHAR(45), OUT res INT, OUT msg VARCHAR(45) )
 BEGIN 
     DECLARE recv_cuit VARCHAR(45);
+    DECLARE recv_cuitNuevo VARCHAR(45);
     SELECT cuit INTO recv_cuit
     FROM Proveedor 
     WHERE Proveedor.cuit = cuitViejo;
-    
-    IF (recv_cuit IS NOT NULL) THEN
+    SELECT C.cuit INTO recv_cuitNuevo
+    FROM Concesionaria AS C 
+    WHERE C.cuit = cuitNuevo;
+    IF (recv_cuit IS NOT NULL AND recv_cuitNuevo IS NULL) THEN
         UPDATE Proveedor AS P SET P.cuit=cuitNuevo, P.razonSocial=razonSocial WHERE P.cuit = cuitViejo;
         SET res = 0;
         SET msg = '';
-    ELSE
-        SET res = -1;
-        SET msg = 'CUIT NO EXISTENTE';
+    ELSE IF(recv_cuit IS NULL) THEN
+            SET res = -1;
+            SET msg = 'CUIT NO EXISTENTE';
+        ELSE
+            SET res = -1;
+            SET msg = 'CUIT YA EXISTENTE';
+        END IF;
     END IF;
     
     SELECT res, msg; 
@@ -386,16 +410,16 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS modificacionPartes;
 DELIMITER //
-CREATE PROCEDURE modificacionPartes(descripcionNuevo VARCHAR(45), descripcionViejo varchar(45), OUT res INT, OUT msg VARCHAR(45))
+CREATE PROCEDURE modificacionPartes(idPartes INT(11), descripcionNuevo VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE key_id_PRT INT(11);
     -- Para saber si existe ya una parte con el mismo nombre
     SELECT PRT.idPartes INTO key_id_PRT
     FROM Partes AS PRT
-    WHERE PRT.descripcion = descripcionViejo;
+    WHERE PRT.idPartes = idPartes;
 
     IF (key_id_PRT IS NOT NULL) THEN
-        UPDATE Partes AS PRT SET PRT.descripcion=descripcionNuevo WHERE PRT.idPartes=key_id_PRT;
+        UPDATE Partes AS PRT SET PRT.descripcion=descripcionNuevo WHERE PRT.idPartes=idPartes;
     ELSE
         SET res = -1;
         SET msg = 'No existe Parte para cambiar nombre';
@@ -408,16 +432,16 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS bajaPartes;
 DELIMITER //
-CREATE PROCEDURE bajaPartes(descripcion VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
+CREATE PROCEDURE bajaPartes(idPartes INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE key_id_PRT INT(11);
     -- Para saber si existe ya una parte con el mismo nombre
     SELECT PRT.idPartes INTO key_id_PRT
     FROM Partes AS PRT
-    WHERE PRT.descripcion = descripcion;
+    WHERE PRT.idPartes = idPartes;
 
     IF (key_id_PRT IS NOT NULL) THEN
-        UPDATE Partes AS PRT SET eliminado=1, fechaEliminado=now() WHERE PRT.idPartes=key_id_PRT;
+        UPDATE Partes AS PRT SET eliminado=1, fechaEliminado=now() WHERE PRT.idPartes=idPartes;
     ELSE
         SET res = -1;
         SET msg = 'No existe Parte';
@@ -428,3 +452,72 @@ END
 DELIMITER ;
 
 
+DROP PROCEDURE IF EXISTS inicioMontaje;
+DELIMITER //
+CREATE PROCEDURE inicioMontaje(numChasis INT(11), OUT res INT, OUT msg VARCHAR(80))
+BEGIN
+    DECLARE enProduccion INT(11);
+    DECLARE numChasis_id INT(11);
+    DECLARE existe INT(11);
+    DECLARE key_id_DP INT(11);
+    DECLARE key_id_E INT(11);
+    DECLARE key_id_LM INT(11);
+    DECLARE key_id_P INT(11);
+    DECLARE key_id_M INT(11);
+
+-- Para saber si existe un vehículo con ese número de chasis
+SELECT V.numChasis INTO existe 
+FROM Vehiculo AS V
+WHERE V.numChasis = numChasis;
+
+-- Para saber si el vehículo está en producción
+SELECT RE.Vehiculo_numChasis INTO enProduccion 
+FROM RegistroEstacion AS RE
+WHERE RE.Vehiculo_numChasis = numChasis;
+-- Para obtener id detalle pedido, pedido y modelo
+SELECT 
+    DetallePedido_idDetallePedido,
+    DetallePedido_Pedido_idPedido,
+    DetallePedido_Modelo_idModelo
+INTO key_id_DP , key_id_P , key_id_M
+FROM Vehiculo AS V
+WHERE V.numChasis = numChasis;
+-- Para obtener datos de Linea de montaje
+SELECT lineademontaje_idLineaDeMontaje INTO key_id_LM
+FROM
+    RegistroLinea AS RL
+WHERE
+    RL.vehiculo_numChasis = numChasis;
+-- Para obtener datos de estación
+SELECT idEstacion INTO key_id_E 
+FROM Estacion AS E
+WHERE E.orden = 1 AND LineaDeMontaje_idLineaDeMontaje = key_id_LM;
+-- Para saber si hay un vehículo ocupando la estación
+SELECT RE.Vehiculo_numChasis INTO numChasis_id
+FROM RegistroEstacion AS RE
+WHERE RE.fechayHoraEgreso IS NULL
+        AND RE.Estacion_LineaDeMontaje_idLineaDeMontaje = key_id_LM
+        AND RE.Estacion_idEstacion = key_id_E;
+
+    IF (numChasis_id IS NULL AND enProduccion IS NULL AND existe IS NOT NULL) THEN
+        INSERT INTO RegistroEstacion(fechayHoraIngreso, Vehiculo_numChasis, Vehiculo_DetallePedido_idDetallePedido, Vehiculo_DetallePedido_Pedido_idPedido, Vehiculo_DetallePedido_Modelo_idModelo, 
+            Estacion_idEstacion, Estacion_LineaDeMontaje_idLineaDeMontaje, Estacion_LineaDeMontaje_Modelo_idModelo) VALUES (now(), numChasis, key_id_DP, key_id_P,
+            key_id_M, key_id_E, key_id_LM, key_id_M);
+            SET res = 0;
+            SET msg = CONCAT('Vehículo ', numChasis, ' en producción');
+    ELSE IF(numChasis_id IS NOT NULL) THEN
+            SET res = -1;
+            SET msg = CONCAT('ERROR: Vehículo con num chasis', numChasis_id, ' está actualmente ocupando la estación.');
+        ELSE IF(enProduccion IS NOT NULL) THEN
+                SET res = -1;
+                SET msg = "ERROR: El vehículo se encuentra en producción.";
+            ELSE
+                SET res = -1;
+                SET msg = "ERROR: Ese vehículo no existe.";
+            END IF;
+        END IF;
+    END IF;
+SELECT res, msg;
+END
+//
+DELIMITER ;
