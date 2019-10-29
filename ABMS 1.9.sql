@@ -188,38 +188,23 @@ DROP PROCEDURE IF EXISTS modificacionDetallePedido;
 DELIMITER //
 CREATE PROCEDURE modificacionDetallePedido(idDetallePedido INT(11), modelo VARCHAR(45), cantidad INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
+	-- declaramos variables locales
     DECLARE key_id_M INT(11);
     DECLARE key_id_DP INT(11);
-    DECLARE replModelo INT(11);
-    DECLARE replCantidad INT(11);
     
+    -- buscamos si el modelo existe en la tabla Modelo
     SELECT idModelo INTO key_id_M
     FROM Modelo AS M
     WHERE M.descripcion = modelo;
     
+    -- buscamos si el detallePedido existe en la tabla DetallePedido
     SELECT DP.idDetallePedido INTO key_id_DP
-    FROM DetallePedido AS DP 
-    WHERE DP.idDetallePedido = idDetallePedido;
-    
-     -- Para ver si son repetidos los valores
-    SELECT DP.Modelo_idModelo INTO replModelo
-    FROM DetallePedido AS DP
-    WHERE DP.idDetallePedido = idDetallePedido;
-    
-    SELECT DP.cantidad INTO replCantidad
     FROM DetallePedido AS DP 
     WHERE DP.idDetallePedido = idDetallePedido;
 
     IF (key_id_DP IS NOT NULL AND key_id_M IS NOT NULL) THEN
         set foreign_key_checks=0;
-        IF (replModelo IS NULL AND replCantidad IS NULL) THEN
-            UPDATE DetallePedido AS DP SET DP.Modelo_idModelo=key_id_M, DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
-        ELSE IF  (replModelo IS not NULL) THEN
-                UPDATE DetallePedido AS DP SET DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
-            ELSE
-                UPDATE DetallePedido AS DP SET DP.Modelo_idModelo=key_id_M WHERE DP.idDetallePedido = idDetallePedido;
-            END IF;
-        END IF;
+		UPDATE DetallePedido AS DP SET DP.Modelo_idModelo=key_id_M, DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
         SET res = 0;
         SET msg = '';
     ELSE IF(key_id_DP IS NOT NULL) THEN
@@ -250,7 +235,7 @@ BEGIN
         SET msg = '';
     ELSE
         SET res = -1;
-        SET msg = 'No existe Detalle del Pedido';
+        SET msg = 'No existe Detalle Pedido con ese ID';
         SELECT res, msg;
     END IF;
 END
@@ -297,59 +282,6 @@ END
 //
 DELIMITER ;
 
-DROP PROCEDURE IF EXISTS diferencia;
-DELIMITER //
-CREATE PROCEDURE diferencia(idDetallePedido INT(11), cantidad INT(11), OUT dif INT)
-BEGIN
-    DECLARE valor INT(11);
-    SELECT COUNT(DP.idDetallePedido) INTO valor
-    FROM DetallePedido AS DP
-    WHERE DP.idDetallePedido = idDetallePedido;
-    
-    set dif=cantidad-valor;
-END
-//
-DELIMITER ;
-
-DROP PROCEDURE IF EXISTS modifNEGVehiculo;
-DELIMITER //
-CREATE PROCEDURE modifNEGVehiculo(idModelo INT(11), idDetallePedido INT(11), INOUT id INT(11))
-BEGIN
-    DECLARE idModeloParametro INTEGER;
-    DECLARE modelo VARCHAR(45);
-    DECLARE nCantidadDetalle INT;
-    DECLARE nInsertados INT;
-    DECLARE finished INT DEFAULT 0;
-    DECLARE curDetallePedido
-        CURSOR FOR
-            SELECT Modelo_idModelo, cantidad FROM DetallePedido WHERE idDetallePedido = idDetallePedido;
-    DECLARE CONTINUE HANDLER
-        FOR NOT FOUND SET finished = 1;
-    OPEN curDetallePedido;
-    
-    -- Obtenemos el modelo
-    SELECT descripcion INTO modelo
-    FROM Modelo
-    WHERE Modelo.idModelo = idModelo;
-    
-    getDetalle: LOOP
-        FETCH curDetallePedido INTO idModeloParametro, nCantidadDetalle;
-        IF finished = 1 THEN
-            LEAVE getDetalle;
-        END IF;
-        
-        SET nInsertados = 0;
-        WHILE nInsertados < nCantidadDetalle DO
-            INSERT INTO Vehiculo(DetallePedido_idDetallePedido, DetallePedido_Modelo_idModelo, DetallePedido_Pedido_idPedido, descripcion) 
-                VALUES (ultimo_detalle, idModeloParametro, id, modelo);
-            SET nInsertados = nInsertados  + 1;
-        END WHILE;
-    END LOOP getDetalle;
-    -- Elimino el cursor de memoria
-    CLOSE curDetallePedido;
-END
-//
-DELIMITER ;
 
 /*--------------------------------------------------------------------------------------------------------------------------------------------*/
 /*----ABM PROVEEDOR---------------------------------------------------------------------------------------------------------------------------*/
@@ -440,11 +372,13 @@ BEGIN
 
     IF (key_id_PRT IS NULL) THEN
         INSERT INTO Partes (descripcion) VALUES (descripcion);
+		SET res = 0;
+        SET msg = '';
     ELSE
         SET res = -1;
         SET msg = 'Ya existe Parte con ese nombre';
-        SELECT res, msg;
     END IF;
+    SELECT res, msg;
 END
 //
 DELIMITER ;
