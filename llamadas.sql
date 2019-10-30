@@ -4,6 +4,8 @@ USE TerminalAutomotriz;
 -- Damos de alta 2 concesionarias
 CALL altaConcesionaria('1234567890', 'Ford1', @res, @msg);
 CALL altaConcesionaria('1234567891', 'Ford2', @res, @msg);
+CALL altaConcesionaria('1234567892', 'Ford3', @res, @msg);
+CALL altaConcesionaria('1234567893', 'Ford4', @res, @msg);
 -- Modificamos el nombre de una concesionaria
 CALL modificacionConcesionaria('1234567890', '1234567899', "FordNuevo", @res, @msg);
 -- Baja lógica de una concesionaria
@@ -12,13 +14,16 @@ CALL bajaConcesionaria('1234567890', @res, @msg);
 
 /* ABM PEDIDOS */
 -- Damos de alta 3 pedidos para una concesionaria
-CALL altaPedido('1234567890', @idP, @res, @msg);
-SET @id := @idP; -- Para obtener el último pedido agregado
-CALL modificacionPedido(@id, '1234567891', @res, @msg);
-CALL bajaPedido(5, @res, @msg);
-CALL altaDetallePedido('KA', 10, @id, @res, @msg);
-CALL altaDetallePedido('Ranger', 15, @id, @res, @msg);
-CALL altaDetallePedido('Focus', 35, @id, @res, @msg);
+CALL altaPedido('1234567890', @res, @msg);
+CALL altaPedido('1234567890', @res, @msg);
+CALL altaPedido('1234567891', @res, @msg);
+CALL altaPedido('1234567891', @res, @msg);
+CALL modificacionPedido(1, '1234567891', @res, @msg);
+CALL bajaPedido(3, @res, @msg);
+CALL altaDetallePedido('KA', 10, 1, @res, @msg);
+CALL altaDetallePedido('Ranger', 15, 2, @res, @msg);
+CALL altaDetallePedido('Focus', 35, 2, @res, @msg); -- VeRIFICAR
+CALL altaDetallePedido('Fiesta', 35, 4, @res, @msg);
 -- Modificación de los detalles de los pedidos
 CALL modificacionDetallePedido(1, 'Focus', 10, @res, @msg);
 CALL modificacionDetallePedido(2, 'KA', 40, @res, @msg);
