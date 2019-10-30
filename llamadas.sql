@@ -22,10 +22,10 @@ CALL modificacionPedido(1, '1234567891', @res, @msg);
 CALL bajaPedido(3, @res, @msg);
 CALL altaDetallePedido('KA', 10, 1, @res, @msg);
 CALL altaDetallePedido('Ranger', 15, 2, @res, @msg);
-CALL altaDetallePedido('Focus', 35, 2, @res, @msg); -- VeRIFICAR
+CALL altaDetallePedido('Focus', 35, 2, @res, @msg);
 CALL altaDetallePedido('Fiesta', 35, 4, @res, @msg);
 -- Modificación de los detalles de los pedidos
-CALL modificacionDetallePedido(1, 'Focus', 10, @res, @msg);
+CALL modificacionDetallePedido(5, 'Focus', 10, @res, @msg);
 CALL modificacionDetallePedido(2, 'KA', 40, @res, @msg);
 -- Damos de baja algunos pedidos
 CALL bajaDetallePedido(3, @res, @msg);
@@ -55,16 +55,4 @@ CALL modificacionPartes(6, "cablerío", @res, @msg);
 CALL modificacionPartes(1, "turbo", @res, @msg);
 -- Baja
 CALL bajaPartes(7, @res, @msg);
-
--- Testing
-SELECT * FROM RegistroEstacion;
-SELECT * FROM RegistroLinea;
-SELECT * FROM LineaDeMontaje;
-SELECT * FROM Concesionaria;
-SELECT * FROM Pedido;
-SELECT * FROM DetallePedido;
-SELECT * FROM Modelo;
-SELECT * FROM Vehiculo;
-SELECT * FROM Proveedor;
-SELECT * FROM Partes;
 

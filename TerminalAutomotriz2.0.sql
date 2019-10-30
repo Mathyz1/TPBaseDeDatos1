@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Pedido` (
   `eliminado` TINYINT(1) NOT NULL DEFAULT '0',
   `fechaEliminado` DATETIME NULL DEFAULT NULL,
   PRIMARY KEY (`idPedido`),
-  INDEX `fk_Pedido_Concesionaria1_idx` (`Concesionaria_cuit` ASC) VISIBLE,
+  INDEX `fk_Pedido_Concesionaria1_idx` (`Concesionaria_cuit` ASC),
   CONSTRAINT `fk_Pedido_Concesionaria1`
     FOREIGN KEY (`Concesionaria_cuit`)
     REFERENCES `TerminalAutomotriz`.`Concesionaria` (`cuit`)
@@ -73,8 +73,8 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`DetallePedido` (
   `eliminado` TINYINT(1) NOT NULL DEFAULT '0',
   `fechaEliminado` DATETIME NULL DEFAULT NULL,
   PRIMARY KEY (`idDetallePedido`, `idPedido`, `idModelo`),
-  INDEX `fk_DetallePedido_Pedido1_idx` (`idPedido` ASC) VISIBLE,
-  INDEX `fk_DetallePedido_Modelo1_idx` (`idModelo` ASC) VISIBLE,
+  INDEX `fk_DetallePedido_Pedido1_idx` (`idPedido` ASC),
+  INDEX `fk_DetallePedido_Modelo1_idx` (`idModelo` ASC),
   CONSTRAINT `fk_DetallePedido_Modelo1`
     FOREIGN KEY (`idModelo`)
     REFERENCES `TerminalAutomotriz`.`Modelo` (`idModelo`)
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`LineaDeMontaje` (
   `idLineaDeMontaje` INT(11) NOT NULL AUTO_INCREMENT,
   `idModelo` INT(11) NOT NULL,
   PRIMARY KEY (`idLineaDeMontaje`),
-  INDEX `fk_LineaDeMontaje_Modelo1_idx` (`idModelo` ASC) VISIBLE,
+  INDEX `fk_LineaDeMontaje_Modelo1_idx` (`idModelo` ASC),
   CONSTRAINT `fk_LineaDeMontaje_Modelo1`
     FOREIGN KEY (`idModelo`)
     REFERENCES `TerminalAutomotriz`.`Modelo` (`idModelo`)
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Estacion` (
   `stock` INT(11) NOT NULL,
   `idLineaDeMontaje` INT(11) NOT NULL,
   PRIMARY KEY (`idEstacion`, `idLineaDeMontaje`),
-  INDEX `fk_Estacion_LineaDeMontaje1_idx` (`idLineaDeMontaje` ASC) VISIBLE,
+  INDEX `fk_Estacion_LineaDeMontaje1_idx` (`idLineaDeMontaje` ASC),
   CONSTRAINT `fk_Estacion_LineaDeMontaje1`
     FOREIGN KEY (`idLineaDeMontaje`)
     REFERENCES `TerminalAutomotriz`.`LineaDeMontaje` (`idLineaDeMontaje`)
@@ -147,8 +147,8 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Estacion_has_Partes` (
   `idPartes` INT(11) NOT NULL,
   `cantidad` INT(11) NOT NULL,
   PRIMARY KEY (`idEstacion`, `idPartes`),
-  INDEX `fk_Estacion_has_Partes_Partes1_idx` (`idPartes` ASC) VISIBLE,
-  INDEX `fk_Estacion_has_Partes_Estacion1_idx` (`idEstacion` ASC) VISIBLE,
+  INDEX `fk_Estacion_has_Partes_Partes1_idx` (`idPartes` ASC),
+  INDEX `fk_Estacion_has_Partes_Estacion1_idx` (`idEstacion` ASC),
   CONSTRAINT `fk_Estacion_has_Partes_Estacion1`
     FOREIGN KEY (`idEstacion`)
     REFERENCES `TerminalAutomotriz`.`Estacion` (`idEstacion`)
@@ -186,8 +186,8 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Partes_has_Proveedor` (
   `eliminado` TINYINT(1) NOT NULL DEFAULT '0',
   `fechaEliminado` DATETIME NULL DEFAULT NULL,
   PRIMARY KEY (`idPartes`, `Proveedor_cuit`),
-  INDEX `fk_Partes_has_Proveedor_Proveedor1_idx` (`Proveedor_cuit` ASC) VISIBLE,
-  INDEX `fk_Partes_has_Proveedor_Partes1_idx` (`idPartes` ASC) VISIBLE,
+  INDEX `fk_Partes_has_Proveedor_Proveedor1_idx` (`Proveedor_cuit` ASC),
+  INDEX `fk_Partes_has_Proveedor_Partes1_idx` (`idPartes` ASC),
   CONSTRAINT `fk_Partes_has_Proveedor_Partes1`
     FOREIGN KEY (`idPartes`)
     REFERENCES `TerminalAutomotriz`.`Partes` (`idPartes`)
@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Vehiculo` (
   `idPedido` INT(11) NOT NULL,
   `idModelo` INT(11) NOT NULL,
   PRIMARY KEY (`numChasis`),
-  INDEX `fk_Vehiculo_DetallePedido1_idx` (`idDetallePedido` ASC, `idPedido` ASC, `idModelo` ASC) VISIBLE,
+  INDEX `fk_Vehiculo_DetallePedido1_idx` (`idDetallePedido` ASC, `idPedido` ASC, `idModelo` ASC),
   CONSTRAINT `fk_Vehiculo_DetallePedido1`
     FOREIGN KEY (`idDetallePedido` , `idPedido` , `idModelo`)
     REFERENCES `TerminalAutomotriz`.`DetallePedido` (`idDetallePedido` , `idPedido` , `idModelo`)
@@ -231,8 +231,8 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`RegistroLinea` (
   `numChasis` INT(11) NOT NULL,
   `idLineaDeMontaje` INT(11) NOT NULL,
   PRIMARY KEY (`numChasis`, `idLineaDeMontaje`),
-  INDEX `fk_Vehiculo_has_LineaDeMontaje_LineaDeMontaje2_idx` (`idLineaDeMontaje` ASC) VISIBLE,
-  INDEX `fk_Vehiculo_has_LineaDeMontaje_Vehiculo2_idx` (`numChasis` ASC) VISIBLE,
+  INDEX `fk_Vehiculo_has_LineaDeMontaje_LineaDeMontaje2_idx` (`idLineaDeMontaje` ASC),
+  INDEX `fk_Vehiculo_has_LineaDeMontaje_Vehiculo2_idx` (`numChasis` ASC),
   CONSTRAINT `fk_Vehiculo_has_LineaDeMontaje_Vehiculo2`
     FOREIGN KEY (`numChasis`)
     REFERENCES `TerminalAutomotriz`.`Vehiculo` (`numChasis`)
@@ -251,15 +251,15 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `TerminalAutomotriz`.`RegistroEstacion`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`RegistroEstacion` (
-  `idRegistroEstacion` INT NOT NULL,
+  `idRegistroEstacion` INT NOT NULL AUTO_INCREMENT,
   `fechayHoraIngreso` DATETIME NOT NULL,
   `fechayHoraEgreso` DATETIME NULL,
   `numChasis` INT(11) NOT NULL,
   `idEstacion` INT(11) NOT NULL,
   `idLineaDeMontaje` INT(11) NOT NULL,
   PRIMARY KEY (`idRegistroEstacion`, `numChasis`, `idEstacion`, `idLineaDeMontaje`),
-  INDEX `fk_Vehiculo_has_Estacion_Estacion1_idx` (`idEstacion` ASC, `idLineaDeMontaje` ASC) VISIBLE,
-  INDEX `fk_Vehiculo_has_Estacion_Vehiculo1_idx` (`numChasis` ASC) VISIBLE,
+  INDEX `fk_Vehiculo_has_Estacion_Estacion1_idx` (`idEstacion` ASC, `idLineaDeMontaje` ASC),
+  INDEX `fk_Vehiculo_has_Estacion_Vehiculo1_idx` (`numChasis` ASC),
   CONSTRAINT `fk_Vehiculo_has_Estacion_Vehiculo1`
     FOREIGN KEY (`numChasis`)
     REFERENCES `TerminalAutomotriz`.`Vehiculo` (`numChasis`)

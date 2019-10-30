@@ -165,7 +165,7 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS altaDetallePedido;
 DELIMITER //
-CREATE PROCEDURE altaDetallePedido(modelo VARCHAR(45), cantidad INT(11), id INT(11), OUT res INT, OUT msg VARCHAR(45))
+CREATE PROCEDURE altaDetallePedido(modelo VARCHAR(45), cantidad INT(11), idPedido INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE key_id_M INT(11);
     DECLARE ultimo_detalle INT(11);
@@ -174,9 +174,9 @@ BEGIN
     WHERE M.nombre = modelo;
 
     IF (key_id_M IS NOT NULL) THEN
-        INSERT INTO DetallePedido(idPedido, idModelo, cantidad) VALUES (id, key_id_M, cantidad);
+        INSERT INTO DetallePedido(idPedido, idModelo, cantidad) VALUES (idPedido, key_id_M, cantidad);
         SET ultimo_detalle = LAST_INSERT_ID();
-        CALL altaVehiculo(key_id_M, ultimo_detalle, id);
+        CALL altaVehiculo(key_id_M, ultimo_detalle, idPedido);
         SET res = 0;
         SET msg = '';
     ELSE
@@ -192,9 +192,10 @@ DROP PROCEDURE IF EXISTS modificacionDetallePedido;
 DELIMITER //
 CREATE PROCEDURE modificacionDetallePedido(idDetallePedido INT(11), modelo VARCHAR(45), cantidad INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
-	-- declaramos variables locales
+    -- declaramos variables locales
     DECLARE key_id_M INT(11);
     DECLARE key_id_DP INT(11);
+    DECLARE key_id_P INT(11);
     
     -- buscamos si el modelo existe en la tabla Modelo
     SELECT idModelo INTO key_id_M
@@ -202,13 +203,14 @@ BEGIN
     WHERE M.nombre = modelo;
     
     -- buscamos si el detallePedido existe en la tabla DetallePedido
-    SELECT DP.idDetallePedido INTO key_id_DP
+    SELECT DP.idDetallePedido, DP.idPedido INTO key_id_DP, key_id_P
     FROM DetallePedido AS DP 
     WHERE DP.idDetallePedido = idDetallePedido;
 
     IF (key_id_DP IS NOT NULL AND key_id_M IS NOT NULL) THEN
         set foreign_key_checks=0;
-		UPDATE DetallePedido AS DP SET DP.idModelo=key_id_M, DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
+        UPDATE DetallePedido AS DP SET DP.idModelo=key_id_M, DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
+        CALL altaVehiculo(key_id_M, idDetallePedido, key_id_P); -- Para levantar los vehículos
         SET res = 0;
         SET msg = '';
     ELSE IF(key_id_DP IS NOT NULL) THEN
@@ -248,9 +250,10 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS altaVehiculo;
 DELIMITER //
-CREATE PROCEDURE altaVehiculo(idModelo INT(11), ultimo_detalle INT(11), id INT(11))
+CREATE PROCEDURE altaVehiculo(idModelo INT(11), ultimo_detalle INT(11), idPedido INT(11))
 BEGIN
     DECLARE idModeloParametro INTEGER;
+    DECLARE modif INTEGER;
     DECLARE modelo VARCHAR(45);
     DECLARE key_id_LM INT;
     DECLARE ultimo_vehiculo INT;
@@ -273,19 +276,28 @@ BEGIN
     FROM LineaDeMontaje AS LM
     WHERE LM.idModelo = idModelo
     LIMIT 1;
+/* ARREGLAR
+    -- Obtener si hay vehiculos con ese detalle
+    SELECT V.idDetallePedido INTO modif
+    FROM Vehiculo AS V
+    WHERE V.idDetallePedido = ultimo_detalle
+    LIMIT 1;
 
+    IF (modif IS NOT NULL) THEN
+        DELETE FROM Vehiculo WHERE idDetallePedido = ultimo_detalle;
+    END IF;
+*/
     getDetalle: LOOP
         FETCH curDetallePedido INTO idModeloParametro, nCantidadDetalle;
         IF finished = 1 THEN
             LEAVE getDetalle;
         END IF;
-        SELECT "TEST", nCantidadDetalle, modelo;
         SET nInsertados = 0;
         WHILE nInsertados < nCantidadDetalle DO
             INSERT INTO Vehiculo(idDetallePedido, idModelo, idPedido, descripcion) 
-            	VALUES (ultimo_detalle, idModeloParametro, id, ""); -- ARREGLAR
+                VALUES (ultimo_detalle, idModeloParametro, idPedido, ""); -- ARREGLAR DESCRIPCION
             SET ultimo_vehiculo = LAST_INSERT_ID();
-            INSERT INTO RegistroLinea VALUES(key_id_LM, idModelo, ultimo_vehiculo);
+            INSERT INTO RegistroLinea VALUES(ultimo_vehiculo, key_id_LM);
             SET nInsertados = nInsertados  + 1;
         END WHILE;
     END LOOP getDetalle;
@@ -332,9 +344,9 @@ BEGIN
     SELECT cuit INTO recv_cuit
     FROM Proveedor 
     WHERE Proveedor.cuit = cuitViejo;
-    SELECT C.cuit INTO recv_cuitNuevo
-    FROM Concesionaria AS C 
-    WHERE C.cuit = cuitNuevo;
+    SELECT cuit INTO recv_cuitNuevo
+    FROM Proveedor
+    WHERE cuit = cuitNuevo;
     IF (recv_cuit IS NOT NULL AND recv_cuitNuevo IS NULL) THEN
         UPDATE Proveedor AS P SET P.cuit=cuitNuevo, P.razonSocial=razonSocial WHERE P.cuit = cuitViejo;
         SET res = 0;
@@ -392,7 +404,7 @@ BEGIN
 
     IF (key_id_PRT IS NULL) THEN
         INSERT INTO Partes (nombre) VALUES (nombre);
-		SET res = 0;
+        SET res = 0;
         SET msg = '';
     ELSE
         SET res = -1;
@@ -471,7 +483,7 @@ BEGIN
     WHERE RE.numChasis = numChasis;
     -- Para obtener id detalle pedido, pedido y modelo
     SELECT idDetallePedido, idPedido,idModelo
-    	INTO key_id_DP , key_id_P , key_id_M
+        INTO key_id_DP , key_id_P , key_id_M
     FROM Vehiculo AS V
     WHERE V.numChasis = numChasis;
     -- Para obtener datos de Linea de montaje
@@ -491,12 +503,12 @@ BEGIN
 
     IF (numChasis_id IS NULL AND enProduccion IS NULL AND existe IS NOT NULL) THEN
         INSERT INTO RegistroEstacion(fechayHoraIngreso, numChasis, idEstacion, idLineaDeMontaje) 
-        	VALUES (now(), numChasis, key_id_E, key_id_LM);
+            VALUES (now(), numChasis, key_id_E, key_id_LM);
             SET res = 0;
             SET msg = CONCAT('Vehículo ', numChasis, ' en producción');
     ELSE IF(numChasis_id IS NOT NULL) THEN
             SET res = -1;
-            SET msg = CONCAT('ERROR: Vehículo con num chasis', numChasis_id, ' está actualmente ocupando la estación.');
+            SET msg = CONCAT('ERROR: Vehículo con num chasis ', numChasis_id, ' está actualmente ocupando la estación.');
         ELSE IF(enProduccion IS NOT NULL) THEN
                 SET res = -1;
                 SET msg = "ERROR: El vehículo se encuentra en producción.";
@@ -510,3 +522,99 @@ BEGIN
 END
 //
 DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS siguienteEstacion;
+DELIMITER //
+CREATE PROCEDURE siguienteEstacion(numChasis INT(11), OUT res INT, OUT msg VARCHAR(80))
+BEGIN
+    DECLARE enProduccion INT(11);
+    DECLARE numChasis_id INT(11);
+    DECLARE existe INT(11);
+    DECLARE cantidadEstaciones INT(11);
+    DECLARE diff INT(11);
+    DECLARE NumOrden INT(11);
+    DECLARE key_id_DP INT(11);
+    DECLARE key_id_E INT(11);
+    DECLARE key_id_ENext INT(11);
+    DECLARE key_id_LM INT(11);
+    DECLARE key_id_P INT(11);
+    DECLARE key_id_M INT(11);
+
+    -- Para saber si existe un vehículo con ese número de chasis
+    SELECT V.numChasis INTO existe 
+    FROM Vehiculo AS V
+    WHERE V.numChasis = numChasis;
+    -- Para saber si el vehículo está en producción
+    SELECT RE.numChasis INTO enProduccion 
+    FROM RegistroEstacion AS RE
+    WHERE RE.numChasis = numChasis
+    LIMIT 1;
+    -- Para obtener id detalle pedido, pedido y modelo
+    SELECT idDetallePedido, idPedido,idModelo
+        INTO key_id_DP , key_id_P , key_id_M
+    FROM Vehiculo AS V
+    WHERE V.numChasis = numChasis;
+    -- Para obtener datos de Linea de montaje
+    SELECT idLineaDeMontaje INTO key_id_LM
+    FROM RegistroLinea AS RL
+    WHERE RL.numChasis = numChasis;
+    -- Para obtener id Estacion
+    SELECT idEstacion INTO key_id_E
+    FROM RegistroEstacion AS RE
+    WHERE RE.numChasis = numChasis AND RE.fechayHoraEgreso IS NULL;
+    -- Para obtener el orden de estación
+    SELECT orden INTO NumOrden 
+    FROM Estacion AS E
+    WHERE E.idEstacion = key_id_E;
+    -- Para obtener la cantidad de estaciones de una Linea de montaje
+    SELECT count(*) INTO cantidadEstaciones
+    FROM Estacion AS E
+    WHERE E.idLineaDeMontaje = key_id_LM;
+    SET diff = cantidadEstaciones - NumOrden;
+    IF (diff > 0) THEN
+        SET NumOrden = NumOrden + 1;
+        -- Para obtener la id de la siguiente estación
+        SELECT idEstacion INTO key_id_ENext
+            FROM Estacion AS E
+            WHERE E.orden = NumOrden AND E.idLineaDeMontaje = key_id_LM;
+        -- Para saber si hay un vehículo ocupando la estación
+        SELECT RE.numChasis INTO numChasis_id
+        FROM RegistroEstacion AS RE
+        WHERE RE.fechayHoraEgreso IS NULL
+            AND RE.idLineaDeMontaje = key_id_LM
+            AND RE.idEstacion = key_id_ENext;
+    END IF;
+    IF (numChasis_id IS NULL AND enProduccion IS NOT NULL AND existe IS NOT NULL) THEN
+        UPDATE RegistroEstacion AS RE SET fechayHoraEgreso=now() WHERE RE.numChasis = numChasis AND idEstacion = key_id_E;
+        IF (diff > 0) THEN
+            INSERT INTO RegistroEstacion(fechayHoraIngreso, numChasis, idEstacion, idLineaDeMontaje) 
+                VALUES (now(), numChasis, key_id_ENext, key_id_LM);
+            SET res = 0;
+            SET msg = CONCAT('Vehículo ', numChasis, ' en estación ', NumOrden);
+        ELSE IF (diff = 0) THEN
+                UPDATE Vehiculo AS V SET fechaFinalizacion=now(), terminado=1 WHERE V.numChasis = numChasis;
+                SET res = 0;
+                SET msg = CONCAT('Vehículo ', numChasis, ' finalizado');
+            ELSE
+                SET res = -1;
+                SET msg = "ERROR: El vehículo ya no está en producción";
+            END IF;
+        END IF;
+    ELSE IF(numChasis_id IS NOT NULL) THEN
+            SET res = -1;
+            SET msg = CONCAT('ERROR: Vehículo con num chasis ', numChasis_id, ' está actualmente ocupando la estación.');
+        ELSE IF(enProduccion IS NULL) THEN
+                SET res = -1;
+                SET msg = "ERROR: El vehículo no se encuentra en producción.";
+            ELSE
+                SET res = -1;
+                SET msg = "ERROR: Ese vehículo no existe.";
+            END IF;
+        END IF;
+    END IF;
+    SELECT res, msg;
+END
+//
+DELIMITER ;
+
