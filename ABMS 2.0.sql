@@ -295,8 +295,8 @@ BEGIN
         END IF;
         SET nInsertados = 0;
         WHILE nInsertados < nCantidadDetalle DO
-            INSERT INTO Vehiculo(idDetallePedido, idModelo, idPedido, descripcion) 
-                VALUES (ultimo_detalle, idModeloParametro, idPedido, ""); -- ARREGLAR DESCRIPCION
+            INSERT INTO Vehiculo(idDetallePedido, idModelo, idPedido) 
+                VALUES (ultimo_detalle, idModeloParametro, idPedido); -- ARREGLAR DESCRIPCION
             SET ultimo_vehiculo = LAST_INSERT_ID();
             INSERT INTO RegistroLinea VALUES(ultimo_vehiculo, key_id_LM);
             SET nInsertados = nInsertados  + 1;
