@@ -618,3 +618,109 @@ END
 //
 DELIMITER ;
 
+
+DROP PROCEDURE IF EXISTS listarVehiculo;
+DELIMITER //
+CREATE PROCEDURE listarVehiculo(idPedido INT(11), OUT res INT, OUT msg VARCHAR(45))
+BEGIN
+    DECLARE fechaFinalizado DATE;
+    DECLARE cantidadPedidos INT;    
+    DECLARE contador INT;
+    DECLARE fecha DATE;
+    DECLARE tempNChasis INT; -- numChasis
+    DECLARE key_id_E INT;
+    DECLARE estado VARCHAR(45);
+    DECLARE finished INT DEFAULT 0;
+    DECLARE curVehiculo
+        CURSOR FOR
+            SELECT numChasis, fechaFinalizacion FROM Vehiculo AS V WHERE V.idPedido = idPedido;
+    DECLARE CONTINUE HANDLER
+        FOR NOT FOUND SET finished = 1;
+    OPEN curVehiculo;
+    
+    -- TABLAS TEMPORALES
+    CREATE TEMPORARY TABLE IF NOT EXISTS ReportPedidoVehiculo(
+        idReport INTEGER NOT NULL AUTO_INCREMENT,
+        numChasis INTEGER NOT NULL,
+        estado VARCHAR(45) NOT NULL DEFAULT '',
+        PRIMARY KEY (idReport)
+    );
+
+    SELECT count(*) INTO cantidadPedidos
+    FROM Vehiculo AS V
+    WHERE V.idPedido = idPedido;
+
+/*
+    SELECT numChasis, determinarEstado(numChasis, idPedido)
+    FROM Vehiculo AS V
+    WHERE V.idPedido = idPedido;
+*/
+
+  
+    getVehiculo: LOOP
+        FETCH curVehiculo INTO tempNChasis, fechaFinalizado;
+        IF finished = 1 THEN
+            SELECT "SALIMOS LOOP";
+           LEAVE getVehiculo;
+        END IF;
+        IF (fechaFinalizado IS NOT NULL) THEN
+            SET estado = "Finalizado";
+        ELSE
+            SELECT idEstacion INTO key_id_E  
+            FROM RegistroEstacion AS RE
+            WHERE RE.fechayHoraEgreso IS NULL AND RE.numChasis = tempNChasis;
+            IF(key_id_E IS NOT NULL) THEN
+                SET estado = CONCAT("En producción en estación: ", key_id_E);
+            ELSE
+                SET estado = "No iniciado";
+            END IF;
+        END IF;
+        SELECT "INSERT";
+        INSERT INTO ReportPedidoVehiculo(numChasis, estado)
+            VALUES(tempNChasis, estado);
+    END LOOP getVehiculo;
+
+  CLOSE curVehiculo;
+
+
+
+/*
+
+
+
+    getVehiculo: LOOP
+        FETCH curVehiculo INTO tempNChasis, fechaFinalizado;
+        IF finished = 1 THEN
+            LEAVE getVehiculo;
+        END IF;
+        SET contador = 0;
+        WHILE contador < cantidadPedidos DO
+            IF (fechaFinalizado IS NOT NULL) THEN
+                SET estado = "Finalizado";
+            ELSE
+                SELECT RE.idEstacion INTO key_id_E  
+                FROM RegistroEstacion AS RE
+                WHERE RE.fechayHoraEgreso IS NULL AND RE.numChasis = tempNChasis;
+                IF(key_id_E IS NOT NULL) THEN
+                    SET estado = CONCAT("En producción en estación: ", key_id_E);
+                ELSE
+                    SET estado = "No iniciado";
+                END IF;
+            END IF;
+
+            INSERT INTO ReportPedidoVehiculo(numChasis, estado)
+                VALUES(tempNChasis, estado);
+            SET contador = contador  + 1;
+        END WHILE;
+    END LOOP getVehiculo;
+    -- Elimino el cursor de memoria
+    CLOSE curVehiculo;
+*/
+
+    SELECT * FROM ReportPedidoVehiculo;
+    DROP TEMPORARY TABLE ReportPedidoVehiculo;
+END
+//
+DELIMITER ;
+
+
