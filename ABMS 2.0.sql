@@ -196,6 +196,7 @@ BEGIN
     DECLARE key_id_M INT(11);
     DECLARE key_id_DP INT(11);
     DECLARE key_id_P INT(11);
+    DECLARE deleted TINYINT(1);
     
     -- buscamos si el modelo existe en la tabla Modelo
     SELECT idModelo INTO key_id_M
@@ -203,11 +204,11 @@ BEGIN
     WHERE M.nombre = modelo;
     
     -- buscamos si el detallePedido existe en la tabla DetallePedido
-    SELECT DP.idDetallePedido, DP.idPedido INTO key_id_DP, key_id_P
-    FROM DetallePedido AS DP 
+    SELECT DP.idDetallePedido, DP.idPedido, DP.eliminado INTO key_id_DP, key_id_P, deleted
+    FROM DetallePedido AS DP
     WHERE DP.idDetallePedido = idDetallePedido;
 
-    IF (key_id_DP IS NOT NULL AND key_id_M IS NOT NULL) THEN
+    IF (key_id_DP IS NOT NULL AND key_id_M IS NOT NULL AND deleted = 0) THEN
         set foreign_key_checks=0;
         UPDATE DetallePedido AS DP SET DP.idModelo=key_id_M, DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
         CALL altaVehiculo(key_id_M, idDetallePedido, key_id_P); -- Para levantar los vehículos
@@ -276,7 +277,7 @@ BEGIN
     FROM LineaDeMontaje AS LM
     WHERE LM.idModelo = idModelo
     LIMIT 1;
-/* ARREGLAR
+
     -- Obtener si hay vehiculos con ese detalle
     SELECT V.idDetallePedido INTO modif
     FROM Vehiculo AS V
@@ -286,7 +287,7 @@ BEGIN
     IF (modif IS NOT NULL) THEN
         DELETE FROM Vehiculo WHERE idDetallePedido = ultimo_detalle;
     END IF;
-*/
+
     getDetalle: LOOP
         FETCH curDetallePedido INTO idModeloParametro, nCantidadDetalle;
         IF finished = 1 THEN
@@ -624,19 +625,19 @@ DELIMITER //
 CREATE PROCEDURE listarVehiculo(idPedido INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE fechaFinalizado DATE;
+    DECLARE idE INT; 
     DECLARE cantidadPedidos INT;    
     DECLARE contador INT;
     DECLARE fecha DATE;
     DECLARE tempNChasis INT; -- numChasis
-    DECLARE key_id_E INT;
-    DECLARE estado VARCHAR(45);
+    DECLARE key_id_E INT default null;
+    DECLARE estado VARCHAR(45) default "";
     DECLARE finished INT DEFAULT 0;
-    DECLARE curVehiculo
-        CURSOR FOR
-            SELECT numChasis, fechaFinalizacion FROM Vehiculo AS V WHERE V.idPedido = idPedido;
+    
+    DECLARE curVehiculo CURSOR FOR SELECT V.numChasis, V.fechaFinalizacion, max(RE.idEstacion) FROM Vehiculo V left JOIN 
+    RegistroEstacion RE ON V.numChasis=RE.numChasis WHERE V.idPedido = idPedido GROUP BY V.numChasis;
     DECLARE CONTINUE HANDLER
         FOR NOT FOUND SET finished = 1;
-    OPEN curVehiculo;
     
     -- TABLAS TEMPORALES
     CREATE TEMPORARY TABLE IF NOT EXISTS ReportPedidoVehiculo(
@@ -645,82 +646,30 @@ BEGIN
         estado VARCHAR(45) NOT NULL DEFAULT '',
         PRIMARY KEY (idReport)
     );
-
-    SELECT count(*) INTO cantidadPedidos
-    FROM Vehiculo AS V
-    WHERE V.idPedido = idPedido;
-
-/*
-    SELECT numChasis, determinarEstado(numChasis, idPedido)
-    FROM Vehiculo AS V
-    WHERE V.idPedido = idPedido;
-*/
-
-  
+    
+    OPEN curVehiculo;
     getVehiculo: LOOP
-        FETCH curVehiculo INTO tempNChasis, fechaFinalizado;
+        FETCH curVehiculo INTO tempNChasis, fechaFinalizado,idE;
         IF finished = 1 THEN
-            SELECT "SALIMOS LOOP";
            LEAVE getVehiculo;
         END IF;
+        
         IF (fechaFinalizado IS NOT NULL) THEN
             SET estado = "Finalizado";
-        ELSE
-            SELECT idEstacion INTO key_id_E  
-            FROM RegistroEstacion AS RE
-            WHERE RE.fechayHoraEgreso IS NULL AND RE.numChasis = tempNChasis;
-            IF(key_id_E IS NOT NULL) THEN
-                SET estado = CONCAT("En producción en estación: ", key_id_E);
+        ELSE IF(idE IS NOT NULL) THEN
+                SET estado = CONCAT("En producción en estación: ", idE);
             ELSE
                 SET estado = "No iniciado";
             END IF;
         END IF;
-        SELECT "INSERT";
-        INSERT INTO ReportPedidoVehiculo(numChasis, estado)
-            VALUES(tempNChasis, estado);
+        
+        INSERT INTO ReportPedidoVehiculo(numChasis, estado) VALUES(tempNChasis, estado);
     END LOOP getVehiculo;
-
+    
   CLOSE curVehiculo;
-
-
-
-/*
-
-
-
-    getVehiculo: LOOP
-        FETCH curVehiculo INTO tempNChasis, fechaFinalizado;
-        IF finished = 1 THEN
-            LEAVE getVehiculo;
-        END IF;
-        SET contador = 0;
-        WHILE contador < cantidadPedidos DO
-            IF (fechaFinalizado IS NOT NULL) THEN
-                SET estado = "Finalizado";
-            ELSE
-                SELECT RE.idEstacion INTO key_id_E  
-                FROM RegistroEstacion AS RE
-                WHERE RE.fechayHoraEgreso IS NULL AND RE.numChasis = tempNChasis;
-                IF(key_id_E IS NOT NULL) THEN
-                    SET estado = CONCAT("En producción en estación: ", key_id_E);
-                ELSE
-                    SET estado = "No iniciado";
-                END IF;
-            END IF;
-
-            INSERT INTO ReportPedidoVehiculo(numChasis, estado)
-                VALUES(tempNChasis, estado);
-            SET contador = contador  + 1;
-        END WHILE;
-    END LOOP getVehiculo;
-    -- Elimino el cursor de memoria
-    CLOSE curVehiculo;
-*/
 
     SELECT * FROM ReportPedidoVehiculo;
     DROP TEMPORARY TABLE ReportPedidoVehiculo;
 END
 //
 DELIMITER ;
-
-
