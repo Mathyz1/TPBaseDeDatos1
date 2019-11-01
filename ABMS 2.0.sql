@@ -252,13 +252,16 @@ DROP PROCEDURE IF EXISTS altaVehiculo;
 DELIMITER //
 CREATE PROCEDURE altaVehiculo(idModelo INT(11), ultimo_detalle INT(11), idPedido INT(11))
 BEGIN
+    DECLARE res INTEGER;
+    DECLARE msg VARCHAR(60);
     DECLARE idModeloParametro INTEGER;
     DECLARE modif INTEGER;
     DECLARE modelo VARCHAR(45);
     DECLARE key_id_LM INT;
     DECLARE ultimo_vehiculo INT;
+    DECLARE tempCantidad INT;
     DECLARE nCantidadDetalle INT;
-    DECLARE nInsertados INT;
+    DECLARE nInsertados INT DEFAULT 0;
     DECLARE finished INT DEFAULT 0;
     DECLARE curDetallePedido
         CURSOR FOR
@@ -278,29 +281,38 @@ BEGIN
     LIMIT 1;
 
     -- Obtener si hay vehiculos con ese detalle
+    -- Es para no acumular Vehiculos cuando realizamos la modificación de Vehículos si previamente ya habían
+    -- varios cargados. Si hay previos estos se borran y se agregan los nuevos.
     SELECT V.idDetallePedido INTO modif
     FROM Vehiculo AS V
     WHERE V.idDetallePedido = ultimo_detalle
     LIMIT 1;
-
     IF (modif IS NOT NULL) THEN
         DELETE FROM Vehiculo WHERE idDetallePedido = ultimo_detalle;
     END IF;
-
-    getDetalle: LOOP
-        FETCH curDetallePedido INTO idModeloParametro, nCantidadDetalle;
-        IF finished = 1 THEN
-            LEAVE getDetalle;
-        END IF;
+    
+    -- Para saber si existe ese Detalle Pedido con los datos. En caso contrario devuelve NULL
+    -- y no se realiza el Alta de vehículos
+    SELECT cantidad INTO tempCantidad 
+    FROM DetallePedido 
+    WHERE idDetallePedido = ultimo_detalle;
+    
+    IF tempCantidad IS NOT NULL THEN
         SET nInsertados = 0;
-        WHILE nInsertados < nCantidadDetalle DO
+        WHILE nInsertados < tempCantidad DO
+            FETCH curDetallePedido INTO idModeloParametro, nCantidadDetalle;
             INSERT INTO Vehiculo(idDetallePedido, idModelo, idPedido) 
                 VALUES (ultimo_detalle, idModeloParametro, idPedido); -- ARREGLAR DESCRIPCION
             SET ultimo_vehiculo = LAST_INSERT_ID();
             INSERT INTO RegistroLinea VALUES(ultimo_vehiculo, key_id_LM);
             SET nInsertados = nInsertados  + 1;
         END WHILE;
-    END LOOP getDetalle;
+    ELSE
+        SET res = -1;
+        SET msg = 'No se pudo realizar el alta de vehiculos';
+        SELECT -1, msg;
+    END IF;
+
     -- Elimino el cursor de memoria
     CLOSE curDetallePedido;
 END
@@ -673,3 +685,4 @@ BEGIN
 END
 //
 DELIMITER ;
+
