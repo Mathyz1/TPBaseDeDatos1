@@ -11,9 +11,6 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,N
 -- Schema TerminalAutomotriz
 -- -----------------------------------------------------
 
--- -----------------------------------------------------
--- Schema TerminalAutomotriz
--- -----------------------------------------------------
 DROP SCHEMA IF EXISTS TerminalAutomotriz;
 CREATE SCHEMA IF NOT EXISTS `TerminalAutomotriz` DEFAULT CHARACTER SET utf8;
 USE `TerminalAutomotriz` ;
@@ -220,6 +217,7 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Vehiculo` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
+AUTO_INCREMENT = 1001
 DEFAULT CHARACTER SET = utf8;
 
 

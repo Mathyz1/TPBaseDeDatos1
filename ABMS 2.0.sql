@@ -638,7 +638,7 @@ BEGIN
     DECLARE CONTINUE HANDLER
         FOR NOT FOUND SET finished = 1;
     
-    -- TABLAS TEMPORALES
+    -- TABLA TEMPORAL
     CREATE TEMPORARY TABLE IF NOT EXISTS ReportPedidoVehiculo(
         idReport INTEGER NOT NULL AUTO_INCREMENT,
         numChasis INTEGER NOT NULL,
@@ -648,7 +648,7 @@ BEGIN
     
     OPEN curVehiculo;
     getVehiculo: LOOP
-        FETCH curVehiculo INTO tempNChasis, fechaFinalizado,idE;
+        FETCH curVehiculo INTO tempNChasis, fechaFinalizado, idE;
         IF finished = 1 THEN
            LEAVE getVehiculo;
         END IF;
@@ -664,9 +664,10 @@ BEGIN
         
         INSERT INTO ReportPedidoVehiculo(numChasis, estado) VALUES(tempNChasis, estado);
     END LOOP getVehiculo;
-    
-  CLOSE curVehiculo;
 
+    CLOSE curVehiculo;
+    
+    -- Mostramos la situación en la que se encuentra cada vehículo
     SELECT * FROM ReportPedidoVehiculo;
     DROP TEMPORARY TABLE ReportPedidoVehiculo;
 END
