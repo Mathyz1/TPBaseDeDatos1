@@ -208,7 +208,7 @@ BEGIN
     FROM DetallePedido AS DP
     WHERE DP.idDetallePedido = idDetallePedido;
 
-    IF (key_id_DP IS NOT NULL AND key_id_M IS NOT NULL AND deleted = 0) THEN}
+    IF (key_id_DP IS NOT NULL AND key_id_M IS NOT NULL AND deleted = 0) THEN
         UPDATE DetallePedido AS DP SET DP.idModelo=key_id_M, DP.cantidad=cantidad WHERE DP.idDetallePedido = idDetallePedido;
         CALL altaVehiculo(key_id_M, idDetallePedido, key_id_P); -- Para levantar los vehículos
         SET res = 0;
