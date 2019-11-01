@@ -204,7 +204,7 @@ DEFAULT CHARACTER SET = utf8;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Vehiculo` (
   `numChasis` INT(11) NOT NULL AUTO_INCREMENT,
-  -- `fechaInicio` DATETIME NULL DEFAULT NULL,
+  `fechaInicio` DATETIME NULL DEFAULT NULL,
   `fechaFinalizacion` DATETIME NULL DEFAULT NULL,
   `terminado` TINYINT(1) NOT NULL DEFAULT '0',
   `idDetallePedido` INT(11) NOT NULL,

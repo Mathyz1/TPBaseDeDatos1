@@ -526,8 +526,9 @@ BEGIN
     IF (numChasis_id IS NULL AND enProduccion IS NULL AND existe IS NOT NULL) THEN
         INSERT INTO RegistroEstacion(fechayHoraIngreso, numChasis, idEstacion, idLineaDeMontaje) 
             VALUES (now(), numChasis, key_id_E, key_id_LM);
-            SET res = 0;
-            SET msg = CONCAT('Vehículo ', numChasis, ' en producción');
+        UPDATE Vehiculo V SET V.fechaInicio = now() WHERE V.numChasis = numChasis;
+        SET res = 0;
+        SET msg = CONCAT('Vehículo ', numChasis, ' en producción');
     ELSE IF(numChasis_id IS NOT NULL) THEN
             SET res = -1;
             SET msg = CONCAT('ERROR: Vehículo con num chasis ', numChasis_id, ' está actualmente ocupando la estación.');
@@ -646,8 +647,7 @@ DELIMITER //
 CREATE PROCEDURE listarVehiculo(idPedido INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE fechaFinalizado DATE;
-    DECLARE idE INT; 
-    DECLARE cantidadPedidos INT;    
+    DECLARE idE INT;
     DECLARE contador INT;
     DECLARE fecha DATE;
     DECLARE tempNChasis INT; -- numChasis
@@ -655,7 +655,7 @@ BEGIN
     DECLARE estado VARCHAR(45) default "";
     DECLARE finished INT DEFAULT 0;
     
-    DECLARE curVehiculo CURSOR FOR SELECT V.numChasis, V.fechaFinalizacion, max(RE.idEstacion) FROM Vehiculo V left JOIN 
+    DECLARE curVehiculo CURSOR FOR SELECT V.numChasis, V.fechaFinalizacion, max(RE.idEstacion) FROM Vehiculo V LEFT JOIN 
     RegistroEstacion RE ON V.numChasis=RE.numChasis WHERE V.idPedido = idPedido GROUP BY V.numChasis;
     DECLARE CONTINUE HANDLER
         FOR NOT FOUND SET finished = 1;
@@ -692,6 +692,32 @@ BEGIN
     -- Mostramos la situación en la que se encuentra cada vehículo
     SELECT * FROM ReportPedidoVehiculo;
     DROP TEMPORARY TABLE ReportPedidoVehiculo;
+END
+//
+DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS promedioLineaMontaje;
+DELIMITER //
+CREATE PROCEDURE promedioLineaMontaje(idLineaDeMontaje INT(11), OUT res INT, OUT msg VARCHAR(45))
+BEGIN
+    DECLARE promedioTiempo FLOAT DEFAULT NULL;
+    -- Calculamos el promedio en segundos
+    SELECT AVG(TIMEDIFF(fechaFinalizacion, fechaInicio)) INTO promedioTiempo
+    FROM Vehiculo V
+    WHERE V.fechaFinalizacion IS NOT NULL AND 
+        V.numChasis IN (SELECT numChasis
+                        FROM RegistroLinea RL
+                        WHERE RL.idLineaDeMontaje = idLineaDeMontaje
+        );
+    IF (promedioTiempo IS NOT NULL) THEN
+        SET res = 0;
+        SET msg = CONCAT("El promedio de tiempo de la Línea de montaje es: ", totalTiempo, " segundos.");
+    ELSE
+        SET res = -1;
+        SET msg = "El promedio de tiempo de la Línea de montaje no se pudo determinar";
+    END IF;
+    SELECT res, msg;
 END
 //
 DELIMITER ;
