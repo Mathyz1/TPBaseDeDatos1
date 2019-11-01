@@ -168,21 +168,31 @@ DELIMITER //
 CREATE PROCEDURE altaDetallePedido(modelo VARCHAR(45), cantidad INT(11), idPedido INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE key_id_M INT(11);
+    DECLARE key_id_P INT(11);
     DECLARE ultimo_detalle INT(11);
+    -- Para verificar que exista dicho modelo
     SELECT idModelo INTO key_id_M
     FROM Modelo AS M
     WHERE M.nombre = modelo;
+    -- Para prevenir ingresar un pedido inexistente
+    SELECT idPedido INTO key_id_P
+    FROM Pedido AS P
+    WHERE P.idPedido = idPedido;
 
-    IF (key_id_M IS NOT NULL) THEN
+    IF (key_id_M IS NOT NULL AND key_id_P IS NOT NULL) THEN
         INSERT INTO DetallePedido(idPedido, idModelo, cantidad) VALUES (idPedido, key_id_M, cantidad);
         SET ultimo_detalle = LAST_INSERT_ID();
         CALL altaVehiculo(key_id_M, ultimo_detalle, idPedido);
         SET res = 0;
         SET msg = '';
-    ELSE
-        SET res = -1;
-        SET msg = 'No existe modelo';
-        SELECT res, msg;
+    ELSE IF (key_id_P IS NULL) THEN
+            SET res = -1;
+            SET msg = CONCAT('No existe Pedido nro: ', idPedido);
+            SELECT res, msg;
+        ELSE
+            SET res = -1;
+            SET msg = CONCAT('No existe modelo ', modelo);
+        END IF;
     END IF;
 END
 //
