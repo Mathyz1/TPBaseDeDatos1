@@ -483,13 +483,17 @@ END
 DELIMITER ;
 
 
+/* --------------------------------------------
+        RUTINAS DE LA PRODUCCIÓN DE VEHÍCULOS
+   --------------------------------------------
+*/
 DROP PROCEDURE IF EXISTS inicioMontaje;
 DELIMITER //
 CREATE PROCEDURE inicioMontaje(numChasis INT(11), OUT res INT, OUT msg VARCHAR(80))
 BEGIN
-    DECLARE enProduccion INT(11);
+    DECLARE vehiculoEnProduccion INT(11);
     DECLARE numChasis_id INT(11);
-    DECLARE existe INT(11);
+    DECLARE existeVehiculo INT(11);
     DECLARE key_id_DP INT(11);
     DECLARE key_id_E INT(11);
     DECLARE key_id_LM INT(11);
@@ -497,15 +501,15 @@ BEGIN
     DECLARE key_id_M INT(11);
 
     -- Para saber si existe un vehículo con ese número de chasis
-    SELECT V.numChasis INTO existe 
+    SELECT V.numChasis INTO existeVehiculo 
     FROM Vehiculo AS V
     WHERE V.numChasis = numChasis;
     -- Para saber si el vehículo está en producción
-    SELECT RE.numChasis INTO enProduccion 
+    SELECT RE.numChasis INTO vehiculoEnProduccion 
     FROM RegistroEstacion AS RE
     WHERE RE.numChasis = numChasis;
     -- Para obtener id detalle pedido, pedido y modelo
-    SELECT idDetallePedido, idPedido,idModelo
+    SELECT idDetallePedido, idPedido, idModelo
         INTO key_id_DP , key_id_P , key_id_M
     FROM Vehiculo AS V
     WHERE V.numChasis = numChasis;
@@ -524,7 +528,7 @@ BEGIN
         AND RE.idLineaDeMontaje = key_id_LM
         AND RE.idEstacion = key_id_E;
 
-    IF (numChasis_id IS NULL AND enProduccion IS NULL AND existe IS NOT NULL) THEN
+    IF (numChasis_id IS NULL AND vehiculoEnProduccion IS NULL AND existeVehiculo IS NOT NULL) THEN
         INSERT INTO RegistroEstacion(fechayHoraIngreso, numChasis, idEstacion, idLineaDeMontaje) 
             VALUES (now(), numChasis, key_id_E, key_id_LM);
         UPDATE Vehiculo V SET V.fechaInicio = now() WHERE V.numChasis = numChasis;
@@ -533,7 +537,7 @@ BEGIN
     ELSE IF(numChasis_id IS NOT NULL) THEN
             SET res = -1;
             SET msg = CONCAT('ERROR: Vehículo con num chasis ', numChasis_id, ' está actualmente ocupando la estación.');
-        ELSE IF(enProduccion IS NOT NULL) THEN
+        ELSE IF(vehiculoEnProduccion IS NOT NULL) THEN
                 SET res = -1;
                 SET msg = "ERROR: El vehículo se encuentra en producción.";
             ELSE
@@ -552,9 +556,9 @@ DROP PROCEDURE IF EXISTS siguienteEstacion;
 DELIMITER //
 CREATE PROCEDURE siguienteEstacion(numChasis INT(11), OUT res INT, OUT msg VARCHAR(80))
 BEGIN
-    DECLARE enProduccion INT(11);
+    DECLARE vehiculoEnProduccion INT(11);
     DECLARE numChasis_id INT(11);
-    DECLARE existe INT(11);
+    DECLARE existeVehiculo INT(11);
     DECLARE cantidadEstaciones INT(11);
     DECLARE diff INT(11);
     DECLARE NumOrden INT(11);
@@ -566,11 +570,11 @@ BEGIN
     DECLARE key_id_M INT(11);
 
     -- Para saber si existe un vehículo con ese número de chasis
-    SELECT V.numChasis INTO existe 
+    SELECT V.numChasis INTO existeVehiculo 
     FROM Vehiculo AS V
     WHERE V.numChasis = numChasis;
     -- Para saber si el vehículo está en producción
-    SELECT RE.numChasis INTO enProduccion 
+    SELECT RE.numChasis INTO vehiculoEnProduccion 
     FROM RegistroEstacion AS RE
     WHERE RE.numChasis = numChasis
     LIMIT 1;
@@ -609,7 +613,7 @@ BEGIN
             AND RE.idLineaDeMontaje = key_id_LM
             AND RE.idEstacion = key_id_ENext;
     END IF;
-    IF (numChasis_id IS NULL AND enProduccion IS NOT NULL AND existe IS NOT NULL) THEN
+    IF (numChasis_id IS NULL AND vehiculoEnProduccion IS NOT NULL AND existeVehiculo IS NOT NULL) THEN
         UPDATE RegistroEstacion AS RE SET fechayHoraEgreso=now() WHERE RE.numChasis = numChasis AND idEstacion = key_id_E;
         IF (diff > 0) THEN
             INSERT INTO RegistroEstacion(fechayHoraIngreso, numChasis, idEstacion, idLineaDeMontaje) 
@@ -628,7 +632,7 @@ BEGIN
     ELSE IF(numChasis_id IS NOT NULL) THEN
             SET res = -1;
             SET msg = CONCAT('ERROR: Vehículo con num chasis ', numChasis_id, ' está actualmente ocupando la estación.');
-        ELSE IF(enProduccion IS NULL) THEN
+        ELSE IF(vehiculoEnProduccion IS NULL) THEN
                 SET res = -1;
                 SET msg = "ERROR: El vehículo no se encuentra en producción.";
             ELSE
@@ -643,6 +647,13 @@ END
 DELIMITER ;
 
 
+/* --------------------------------------------
+        REPORTES
+   --------------------------------------------
+*/
+/*
+    Muestra el estado en el que se encuentra cada vehículo para un pedido dado.
+*/
 DROP PROCEDURE IF EXISTS listarVehiculo;
 DELIMITER //
 CREATE PROCEDURE listarVehiculo(idPedido INT(11), OUT res INT, OUT msg VARCHAR(45))
@@ -697,7 +708,10 @@ END
 //
 DELIMITER ;
 
-
+/*
+    Muestra el promedio que le llevó a una linea de montaje realizar los autos.
+    Solo toma en cuenta los vehículos terminados.
+*/
 DROP PROCEDURE IF EXISTS promedioLineaMontaje;
 DELIMITER //
 CREATE PROCEDURE promedioLineaMontaje(idLineaDeMontaje INT(11), OUT res INT, OUT msg VARCHAR(80))
@@ -723,7 +737,10 @@ END
 //
 DELIMITER ;
 
-
+/*
+    Lista la cantidad total de cada parte que se necesita 
+    para que se realice un pedido dado.
+*/
 DROP PROCEDURE IF EXISTS listarPartes;
 DELIMITER //
 CREATE PROCEDURE listarPartes(idPedidoP INT, OUT res INT, OUT msg VARCHAR(80))
