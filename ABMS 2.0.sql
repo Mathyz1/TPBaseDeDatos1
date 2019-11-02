@@ -727,72 +727,14 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS listarPartes;
 DELIMITER //
-CREATE PROCEDURE listarPartes(idPedidoP INT(11), OUT res INT, OUT msg VARCHAR(80))
+CREATE PROCEDURE listarPartes(idPedidoP INT, OUT res INT, OUT msg VARCHAR(80))
 BEGIN
-    DECLARE key_id_M INT;
-    DECLARE key_id_P INT;
-    DECLARE nCantidadDetalle INT;
-    DECLARE nInsertados INT DEFAULT 0;
-    DECLARE finished INT DEFAULT 0;
-    DECLARE curDetallePedido
-        CURSOR FOR
-            SELECT idModelo, cantidad, idPedido FROM DetallePedido AS DP WHERE DP.idPedido = idPedidoP;
-    DECLARE CONTINUE HANDLER
-        FOR NOT FOUND SET finished = 1;
-    OPEN curDetallePedido;
-    
-    -- TABLA TEMPORAL
-    CREATE TEMPORARY TABLE IF NOT EXISTS ReportPartesXVehiculo(
-        idReport INTEGER NOT NULL AUTO_INCREMENT,
-        idPartes INTEGER NOT NULL,
-        cantidad INTEGER NOT NULL DEFAULT 0,
-        PRIMARY KEY (idReport)
-    );
-
-    -- Obtenemos el modelo
-    SELECT nombre INTO modelo
-    FROM Modelo
-    WHERE Modelo.idModelo = idModelo;
-    -- Obtenemos el Linea de montaje ID
-    SELECT LM.idLineaDeMontaje INTO key_id_LM
-    FROM LineaDeMontaje AS LM
-    WHERE LM.idModelo = idModelo
-    LIMIT 1;
-
-    -- Obtener si hay vehiculos con ese detalle
-    -- Es para no acumular Vehiculos cuando realizamos la modificación de Vehículos si previamente ya habían
-    -- varios cargados. Si hay previos estos se borran y se agregan los nuevos.
-    SELECT V.idDetallePedido INTO modif
-    FROM Vehiculo AS V
-    WHERE V.idDetallePedido = ultimo_detalle
-    LIMIT 1;
-    IF (modif IS NOT NULL) THEN
-        DELETE FROM Vehiculo WHERE idDetallePedido = ultimo_detalle;
-    END IF;
-    
-    -- Para saber si existe ese Detalle Pedido con los datos. En caso contrario devuelve NULL
-    -- y no se realiza el Alta de vehículos
-    SELECT cantidad INTO tempCantidad 
-    FROM DetallePedido AS DP
-    WHERE DP.idDetallePedido = ultimo_detalle;
-    
-    OPEN curDetallePedido;
-    getVehiculo: LOOP
-        FETCH curDetallePedido INTO key_id_M, nCantidadDetalle, key_id_P;
-        IF finished = 1 THEN
-           LEAVE getVehiculo;
-        END IF;
-        SELECT total * nCantidadDetalle INTO totalPartesModelo
-        FROM DetalleModelo AS DetalleModelo
-        WHERE DM.idModelo = key_id_M
-        GROUP BY nombreParte;
-        
-        
-        
-
-    END LOOP getVehiculo;
-
-    CLOSE curVehiculo;
+    SELECT DM.idPartes, sum(DM.cantidad * DP.cantidad) AS "Cantidad requerida"
+        FROM DetalleModelo DM
+        LEFT JOIN DetallePedido DP ON DM.idModelo=DP.idModelo 
+        WHERE DP.idPedido = idPedidoP
+        GROUP BY DM.idPartes;
 END
 //
 DELIMITER ;
+

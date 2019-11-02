@@ -34,7 +34,6 @@ DEFAULT CHARACTER SET = utf8;
 CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Modelo` (
   `idModelo` INT(11) NOT NULL AUTO_INCREMENT,
   `nombre` VARCHAR(45) NOT NULL,
-  `idDetalleModelo` 
   PRIMARY KEY (`idModelo`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
@@ -44,19 +43,24 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `TerminalAutomotriz`.`DetalleModelo`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`DetalleModelo` (
-  `idDetalleModelo` INT NOT NULL,
+  `idDetalleModelo` INT NOT NULL AUTO_INCREMENT,
   `idModelo` INT(11) NOT NULL,
-  `nombreParte` VARCHAR(45) NOT NULL,
-  `total` INT(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`idDetalleModelo`, `idModelo`),
-  INDEX `fk_DetalleModelo_Modelo1_idx` (`idModelo` ASC) VISIBLE,
+  `idPartes` INT(11) NOT NULL,
+  `cantidad` INT(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`idDetalleModelo`, `idModelo`, `idPartes`),
+  INDEX `fk_DetalleModelo_Modelo1_idx` (`idModelo` ASC),
+  INDEX `fk_DetalleModelo_Partes1_idx` (`idPartes` ASC),
   CONSTRAINT `fk_DetalleModelo_Modelo1`
     FOREIGN KEY (`idModelo`)
     REFERENCES `TerminalAutomotriz`.`Modelo` (`idModelo`)
     ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_DetalleModelo_Partes1`
+    FOREIGN KEY (`idPartes`)
+    REFERENCES `TerminalAutomotriz`.`Partes` (`idPartes`)
+    ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
-
 
 -- -----------------------------------------------------
 -- Table `TerminalAutomotriz`.`Pedido`
