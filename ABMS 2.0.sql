@@ -34,9 +34,11 @@ CREATE PROCEDURE modificacionConcesionaria(cuitViejo VARCHAR(45), cuitNuevo VARC
 BEGIN
     DECLARE recv_cuit VARCHAR(45);
     DECLARE recv_cuitNuevo VARCHAR(45);
+    -- Para determinar si el cuit viejo existe en la BD
     SELECT C.cuit INTO recv_cuit
     FROM Concesionaria AS C 
     WHERE C.cuit = cuitViejo;
+    -- Para determinar si el cuit nuevo existe en la BD y no haya dublicados
     SELECT C.cuit INTO recv_cuitNuevo
     FROM Concesionaria AS C 
     WHERE C.cuit = cuitNuevo;
@@ -65,6 +67,7 @@ DELIMITER //
 CREATE PROCEDURE bajaConcesionaria(cuitP VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE recv_cuit VARCHAR(45);
+    -- Para determinar si el cuit existe en la BD
     SELECT cuit INTO recv_cuit
     FROM Concesionaria 
     WHERE Concesionaria.cuit = cuitP;
@@ -92,6 +95,7 @@ DELIMITER //
 CREATE PROCEDURE altaPedido(Concesionaria_cuit VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE recv_cuit VARCHAR(45);
+    -- Para determinar si el cuit existe en la BD
     SELECT cuit INTO recv_cuit
     FROM Concesionaria 
     WHERE Concesionaria.cuit = Concesionaria_cuit;
@@ -145,6 +149,7 @@ DELIMITER //
 CREATE PROCEDURE bajaPedido(idPedido INT, OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE key_id_P INT(11);
+    -- Para determinar si existe el Pedido
     SELECT P.idPedido INTO key_id_P
     FROM Pedido AS P
     WHERE P.idPedido = idPedido;
@@ -212,7 +217,6 @@ BEGIN
     SELECT idModelo INTO key_id_M
     FROM Modelo AS M
     WHERE M.nombre = modelo;
-    
     -- buscamos si el detallePedido existe en la tabla DetallePedido
     SELECT DP.idDetallePedido, DP.idPedido, DP.eliminado INTO key_id_DP, key_id_P, deleted
     FROM DetallePedido AS DP
@@ -242,6 +246,7 @@ DELIMITER //
 CREATE PROCEDURE bajaDetallePedido(idDetallePedido INT(11), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE key_id_DP INT(11);
+    -- Para determinar si el detallePedido existe en la tabla DetallePedido
     SELECT DP.idDetallePedido INTO key_id_DP
     FROM DetallePedido AS DP
     WHERE DP.idDetallePedido = idDetallePedido;
@@ -339,6 +344,7 @@ DELIMITER //
 CREATE PROCEDURE altaProveedor(cuit VARCHAR(45), razonSocial VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE recv_cuit VARCHAR(45);
+    -- Para determinar que el cuit no exista en la tabla Proveedor
     SELECT cuit INTO recv_cuit
     FROM Proveedor 
     WHERE Proveedor.cuit = cuit;
@@ -364,9 +370,11 @@ CREATE PROCEDURE modificacionProveedor(cuitViejo VARCHAR(45), cuitNuevo VARCHAR(
 BEGIN 
     DECLARE recv_cuit VARCHAR(45);
     DECLARE recv_cuitNuevo VARCHAR(45);
+    -- Para determinar si el cuit viejo existe en la BD
     SELECT cuit INTO recv_cuit
     FROM Proveedor 
     WHERE Proveedor.cuit = cuitViejo;
+    -- Para determinar si el cuit nuevo existe en la BD
     SELECT cuit INTO recv_cuitNuevo
     FROM Proveedor
     WHERE cuit = cuitNuevo;
@@ -394,6 +402,7 @@ DELIMITER //
 CREATE PROCEDURE bajaProveedor(cuit VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE recv_cuit VARCHAR(45);
+    -- Para determinar si el cuit existe en la BD
     SELECT cuit INTO recv_cuit
     FROM Proveedor
     WHERE Proveedor.cuit = cuit;
