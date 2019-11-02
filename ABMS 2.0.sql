@@ -703,7 +703,6 @@ DELIMITER //
 CREATE PROCEDURE promedioLineaMontaje(idLineaDeMontaje INT(11), OUT res INT, OUT msg VARCHAR(80))
 BEGIN
     DECLARE promedioTiempo FLOAT DEFAULT NULL;
-    DECLARE tiempoFormateado VARCHAR(10) DEFAULT NULL;
     -- Calculamos el promedio en segundos
     SELECT AVG(TIMEDIFF(fechaFinalizacion, fechaInicio)) INTO promedioTiempo
     FROM Vehiculo V
@@ -729,11 +728,23 @@ DROP PROCEDURE IF EXISTS listarPartes;
 DELIMITER //
 CREATE PROCEDURE listarPartes(idPedidoP INT, OUT res INT, OUT msg VARCHAR(80))
 BEGIN
-    SELECT DM.idPartes, sum(DM.cantidad * DP.cantidad) AS "Cantidad requerida"
+    DECLARE key_id_P INTEGER;
+    -- Para determinar si el pedido existe
+    SELECT DP.idPedido INTO key_id_P
+    FROM DetallePedido AS DP
+    WHERE DP.idPedido = idPedidoP;
+
+    IF (key_id_P IS NOT NULL) THEN
+        SELECT DM.idPartes, sum(DM.cantidad * DP.cantidad) AS "Cantidad requerida"
         FROM DetalleModelo DM
         LEFT JOIN DetallePedido DP ON DM.idModelo=DP.idModelo 
         WHERE DP.idPedido = idPedidoP
         GROUP BY DM.idPartes;
+    ELSE
+        SET res = -1;
+        SET msg = CONCAT("No existe pedido nro:", idPedidoP);
+        SELECT res, msg;
+    END IF;
 END
 //
 DELIMITER ;
