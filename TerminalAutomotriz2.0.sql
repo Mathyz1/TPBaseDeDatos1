@@ -34,9 +34,28 @@ DEFAULT CHARACTER SET = utf8;
 CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Modelo` (
   `idModelo` INT(11) NOT NULL AUTO_INCREMENT,
   `nombre` VARCHAR(45) NOT NULL,
+  `idDetalleModelo` 
   PRIMARY KEY (`idModelo`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
+
+
+-- -----------------------------------------------------
+-- Table `TerminalAutomotriz`.`DetalleModelo`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`DetalleModelo` (
+  `idDetalleModelo` INT NOT NULL,
+  `idModelo` INT(11) NOT NULL,
+  `nombreParte` VARCHAR(45) NOT NULL,
+  `total` INT(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`idDetalleModelo`, `idModelo`),
+  INDEX `fk_DetalleModelo_Modelo1_idx` (`idModelo` ASC) VISIBLE,
+  CONSTRAINT `fk_DetalleModelo_Modelo1`
+    FOREIGN KEY (`idModelo`)
+    REFERENCES `TerminalAutomotriz`.`Modelo` (`idModelo`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------

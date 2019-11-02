@@ -42,14 +42,6 @@ CALL modificacionProveedor("1234567891", "1000567893", "EmpresaNueva1", @res, @m
 CALL bajaProveedor("1234567893", @res, @msg);
 
 /* ABM PARTES */
--- Damos de alta las partes
-CALL altaPartes("motor", @res, @msg);
-CALL altaPartes("neumáticos", @res, @msg);
-CALL altaPartes("frenos", @res, @msg);
-CALL altaPartes("volante", @res, @msg);
-CALL altaPartes("caño de escape", @res, @msg);
-CALL altaPartes("cableado", @res, @msg);
-CALL altaPartes("airbag", @res, @msg);
 -- Modificación
 CALL modificacionPartes(6, "cablerío", @res, @msg);
 CALL modificacionPartes(1, "turbo", @res, @msg);
