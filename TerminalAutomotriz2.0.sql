@@ -154,9 +154,10 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Partes` (
   `nombre` VARCHAR(45) NOT NULL,
   `eliminado` TINYINT(1) NOT NULL DEFAULT '0',
   `fechaEliminado` DATETIME NULL DEFAULT NULL,
+  FULLTEXT indice_parte (`nombre`),
   PRIMARY KEY (`idPartes`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
+  ENGINE = InnoDB
+  DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
@@ -234,7 +235,7 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Vehiculo` (
   `idPedido` INT(11) NOT NULL,
   `idModelo` INT(11) NOT NULL,
   PRIMARY KEY (`numChasis`),
-  INDEX `fk_Vehiculo_DetallePedido1_idx` (`idDetallePedido` ASC, `idPedido` ASC, `idModelo` ASC),
+  -- INDEX `indice_vehiculo` (`idDetallePedido` ASC, `idPedido` ASC, `idModelo` ASC),
   CONSTRAINT `fk_Vehiculo_DetallePedido1`
     FOREIGN KEY (`idDetallePedido` , `idPedido` , `idModelo`)
     REFERENCES `TerminalAutomotriz`.`DetallePedido` (`idDetallePedido` , `idPedido` , `idModelo`)
@@ -243,7 +244,7 @@ CREATE TABLE IF NOT EXISTS `TerminalAutomotriz`.`Vehiculo` (
 ENGINE = InnoDB
 AUTO_INCREMENT = 1001
 DEFAULT CHARACTER SET = utf8;
-
+CREATE INDEX indice_vehiculo ON Vehiculo(idDetallePedido, idPedido, idModelo) USING HASH;
 
 -- -----------------------------------------------------
 -- Table `TerminalAutomotriz`.`RegistroLinea`

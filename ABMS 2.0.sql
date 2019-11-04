@@ -426,16 +426,16 @@ DELIMITER ;
 /*--------------------------------------------------------------------------------------------------------------------------------------------*/
 DROP PROCEDURE IF EXISTS altaPartes;
 DELIMITER //
-CREATE PROCEDURE altaPartes(nombre VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
+CREATE PROCEDURE altaPartes(nombreP VARCHAR(45), OUT res INT, OUT msg VARCHAR(45))
 BEGIN
     DECLARE key_id_PRT INT(11);
     -- Para saber si existe ya una parte con el mismo nombre
     SELECT PRT.idPartes INTO key_id_PRT
     FROM Partes AS PRT
-    WHERE PRT.nombre = nombre;
+    WHERE MATCH(nombre) AGAINST(nombreP);
 
     IF (key_id_PRT IS NULL) THEN
-        INSERT INTO Partes (nombre) VALUES (nombre);
+        INSERT INTO Partes (nombre) VALUES (nombreP);
         SET res = 0;
         SET msg = '';
     ELSE
@@ -501,6 +501,7 @@ DELIMITER //
 CREATE PROCEDURE inicioMontaje(numChasis INT(11), OUT res INT, OUT msg VARCHAR(80))
 BEGIN
     DECLARE vehiculoEnProduccion INT(11);
+    DECLARE terminado INT(11);
     DECLARE numChasis_id INT(11);
     DECLARE existeVehiculo INT(11);
     DECLARE key_id_DP INT(11);
@@ -509,18 +510,20 @@ BEGIN
     DECLARE key_id_P INT(11);
     DECLARE key_id_M INT(11);
 
-    -- Para saber si existe un vehículo con ese número de chasis
-    SELECT V.numChasis INTO existeVehiculo 
+    -- Para saber si el vehículo está terminado
+    SELECT V.terminado INTO terminado 
     FROM Vehiculo AS V
     WHERE V.numChasis = numChasis;
     -- Para saber si el vehículo está en producción
     SELECT RE.numChasis INTO vehiculoEnProduccion 
     FROM RegistroEstacion AS RE
-    WHERE RE.numChasis = numChasis;
+    WHERE RE.numChasis = numChasis
+    LIMIT 1;
     -- Para obtener id detalle pedido, pedido y modelo
-    SELECT idDetallePedido, idPedido, idModelo
-        INTO key_id_DP , key_id_P , key_id_M
-    FROM Vehiculo AS V
+    -- También para saber si existe un vehículo con ese número de chasis
+    SELECT V.idDetallePedido, V.idPedido, V.idModelo, V.numChasis
+        INTO key_id_DP , key_id_P , key_id_M, existeVehiculo
+    FROM Vehiculo AS V USE INDEX (indice_vehiculo)
     WHERE V.numChasis = numChasis;
     -- Para obtener datos de Linea de montaje
     SELECT idLineaDeMontaje INTO key_id_LM
@@ -546,12 +549,16 @@ BEGIN
     ELSE IF(numChasis_id IS NOT NULL) THEN
             SET res = -1;
             SET msg = CONCAT('ERROR: Vehículo con num chasis ', numChasis_id, ' está actualmente ocupando la estación.');
-        ELSE IF(vehiculoEnProduccion IS NOT NULL) THEN
+        ELSE IF(terminado = 1) THEN
                 SET res = -1;
-                SET msg = "ERROR: El vehículo se encuentra en producción.";
-            ELSE
-                SET res = -1;
-                SET msg = "ERROR: Ese vehículo no existe.";
+                SET msg = "ERROR: El vehículo está terminado.";
+            ELSE IF(vehiculoEnProduccion IS NOT NULL) THEN
+                    SET res = -1;
+                    SET msg = "ERROR: El vehículo se encuentra en producción.";
+                ELSE
+                    SET res = -1;
+                    SET msg = "ERROR: Ese vehículo no existe.";
+                END IF;
             END IF;
         END IF;
     END IF;
@@ -676,8 +683,10 @@ BEGIN
     DECLARE estado VARCHAR(45) default "";
     DECLARE finished INT DEFAULT 0;
     
-    DECLARE curVehiculo CURSOR FOR SELECT V.numChasis, V.fechaFinalizacion, max(RE.idEstacion) FROM Vehiculo V LEFT JOIN 
-    RegistroEstacion RE ON V.numChasis=RE.numChasis WHERE V.idPedido = idPedido GROUP BY V.numChasis;
+    -- Uso de cursor con índice para vehículo
+    DECLARE curVehiculo CURSOR FOR SELECT V.numChasis, V.fechaFinalizacion, max(RE.idEstacion) FROM Vehiculo V
+        USE INDEX (indice_vehiculo) LEFT JOIN RegistroEstacion RE ON V.numChasis=RE.numChasis 
+        WHERE V.idPedido = idPedido GROUP BY V.numChasis;
     DECLARE CONTINUE HANDLER
         FOR NOT FOUND SET finished = 1;
     
@@ -717,34 +726,6 @@ END
 //
 DELIMITER ;
 
-/*
-    Muestra el promedio que le llevó a una linea de montaje realizar los autos.
-    Solo toma en cuenta los vehículos terminados.
-*/
-DROP PROCEDURE IF EXISTS promedioLineaMontaje;
-DELIMITER //
-CREATE PROCEDURE promedioLineaMontaje(idLineaDeMontaje INT(11), OUT res INT, OUT msg VARCHAR(80))
-BEGIN
-    DECLARE promedioTiempo FLOAT DEFAULT NULL;
-    -- Calculamos el promedio en segundos
-    SELECT AVG(TIMEDIFF(fechaFinalizacion, fechaInicio)) INTO promedioTiempo
-    FROM Vehiculo V
-    WHERE V.fechaFinalizacion IS NOT NULL AND 
-        V.numChasis IN (SELECT numChasis
-                        FROM RegistroLinea RL
-                        WHERE RL.idLineaDeMontaje = idLineaDeMontaje
-        );
-    IF (promedioTiempo IS NOT NULL) THEN
-        SET res = 0;
-        SET msg = CONCAT("El promedio de tiempo de la Línea de montaje es: ", SEC_TO_TIME(promedioTiempo));
-    ELSE
-        SET res = -1;
-        SET msg = "El promedio de tiempo de la Línea de montaje no se pudo determinar";
-    END IF;
-    SELECT res, msg;
-END
-//
-DELIMITER ;
 
 /*
     Lista la cantidad total de cada parte que se necesita 
@@ -758,8 +739,8 @@ BEGIN
     -- Para determinar si el pedido existe
     SELECT DP.idPedido INTO key_id_P
     FROM DetallePedido AS DP
-    WHERE DP.idPedido = idPedidoP;
-
+    WHERE DP.idPedido = idPedidoP
+    LIMIT 1;
     IF (key_id_P IS NOT NULL) THEN
         SELECT DM.idPartes, sum(DM.cantidad * DP.cantidad) AS "Cantidad requerida"
         FROM DetalleModelo DM
@@ -771,6 +752,36 @@ BEGIN
         SET msg = CONCAT("No existe pedido nro:", idPedidoP);
         SELECT res, msg;
     END IF;
+END
+//
+DELIMITER ;
+
+
+/*
+    Muestra el promedio que le llevó a una linea de montaje realizar los autos.
+    Solo toma en cuenta los vehículos terminados.
+*/
+DROP PROCEDURE IF EXISTS promedioLineaMontaje;
+DELIMITER //
+CREATE PROCEDURE promedioLineaMontaje(idLineaDeMontaje INT(11), OUT res INT, OUT msg VARCHAR(80))
+BEGIN
+    DECLARE promedioTiempo FLOAT DEFAULT NULL;
+    -- Calculamos el promedio en segundos
+    SELECT AVG(TIMEDIFF(fechaFinalizacion, fechaInicio)) INTO promedioTiempo
+    FROM Vehiculo V USE INDEX (indice_vehiculo)
+    WHERE V.fechaFinalizacion IS NOT NULL AND 
+        V.numChasis IN (SELECT numChasis
+                        FROM RegistroLinea RL
+                        WHERE RL.idLineaDeMontaje = idLineaDeMontaje
+        );
+    IF (promedioTiempo IS NOT NULL) THEN
+        SET res = 0;
+        SET msg = CONCAT("El promedio de tiempo de la Línea de montaje es: ", SEC_TO_TIME(promedioTiempo));
+    ELSE
+        SET res = -1;
+        SET msg = "El promedio de tiempo de la Línea de montaje no se pudo determinar";
+    END IF;
+    SELECT res, msg;
 END
 //
 DELIMITER ;
